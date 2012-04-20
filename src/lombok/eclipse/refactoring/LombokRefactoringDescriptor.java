@@ -14,7 +14,7 @@ public class LombokRefactoringDescriptor extends JavaRefactoringDescriptor {
 
 	public LombokRefactoringDescriptor(String project, String description,
 			String comment, Map arguments) {
-		super(ID, project, description, comment, arguments,0);
+		super(ID, project, description, comment, arguments, 0);
 	}
 
 	@Override

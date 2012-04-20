@@ -38,17 +38,12 @@ public class GetterSetterRefactor extends ASTVisitor {
 
 	@Override
 	public boolean visit(FieldDeclaration node) {
-		this.fields.clear();
-		
 		this.fields.add(node);
 		return true;
 	}
 
 	@Override
 	public boolean visit(MethodDeclaration node) {
-		this.getters.clear();
-		this.setters.clear();
-		
 		String identifier = node.getName().getIdentifier();
 		if (identifier.startsWith("get") || identifier.startsWith("is")) {
 			analzyeGetter(node);

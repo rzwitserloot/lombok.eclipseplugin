@@ -1,12 +1,18 @@
 package lombok.eclipse.actions;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import lombok.eclipse.refactoring.LombokRefactoring;
 import lombok.eclipse.wizards.LombokRefactoringWizard;
 
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -18,19 +24,20 @@ import org.eclipse.ui.IWorkbenchPart;
 
 public class LombokRefactorAction implements IObjectActionDelegate {
 
-	private IType type;
 	private IWorkbenchPart activePart;
+	private final List<IJavaElement> elements = new ArrayList<IJavaElement>();
 
 	public void dispose() {
 		// Do nothing
 	}
 
+	@Override
 	public void run(IAction action) {
-		if (this.type != null) {
+		if (!this.elements.isEmpty()) {
 			LombokRefactoring refactoring = new LombokRefactoring();
-			refactoring.setType(type);
+			refactoring.setElements(new ArrayList<IJavaElement>(this.elements));
 			run(new LombokRefactoringWizard(refactoring, "Lombok Refactor"),
-					activePart.getSite().getShell(), "Lombok Refactor");
+					this.activePart.getSite().getShell(), "Lombok Refactor");
 		}
 	}
 
@@ -44,24 +51,24 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 		}
 	}
 
+	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
-		this.type = null;
+		this.elements.clear();
 		if (selection instanceof IStructuredSelection) {
 			IStructuredSelection extended = (IStructuredSelection) selection;
 			for (Iterator<Object> it = extended.iterator(); it.hasNext();) {
 				Object o = it.next();
-				if (o instanceof IType) {
-					this.type = (IType) o;
-					break;
+				if (o instanceof IType || o instanceof ICompilationUnit
+						|| o instanceof IPackageFragment
+						|| o instanceof IPackageFragmentRoot
+						|| o instanceof IJavaProject) {
+					this.elements.add((IJavaElement) o);
+				} else {
+					System.out.println(o.getClass().getName());
 				}
 			}
 		}
-		try {
-			action.setEnabled(this.type != null && this.type.exists()
-					&& this.type.isStructureKnown());
-		} catch (JavaModelException exception) {
-			action.setEnabled(false);
-		}
+		action.setEnabled(!this.elements.isEmpty());
 	}
 
 	@Override

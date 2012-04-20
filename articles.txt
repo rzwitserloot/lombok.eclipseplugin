@@ -1,0 +1,2 @@
+http://www.eclipse.org/articles/article.php?file=Article-Unleashing-the-Power-of-Refactoring/index.html
+http://wiki.fernuni-hagen.de/eclipse/index.php/Eigenes_Refactoring-Tool_f%C3%BCr_Eclipse_schreiben

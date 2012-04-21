@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.eclipse.internal.LombokEclipsePlugin;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -20,6 +22,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTRequestor;
@@ -46,15 +49,21 @@ public class LombokRefactoring extends Refactoring {
 
 	private final Map<ICompilationUnit, TextFileChange> unitChanges = new LinkedHashMap<ICompilationUnit, TextFileChange>();
 	private Collection<IJavaElement> elements;
+	private boolean refactorSetters;
+	private boolean refactorGetters;
 
 	@Override
 	public String getName() {
-		return "Refactor Lombok";
+		return "Use Lombok Annotations";
+	}
+
+	public int getNumberOfElements() {
+		return this.elements.size();
 	}
 
 	@Override
-	public RefactoringStatus checkInitialConditions(IProgressMonitor monitor)
-			throws CoreException, OperationCanceledException {
+	public RefactoringStatus checkInitialConditions(IProgressMonitor monitor) throws CoreException,
+			OperationCanceledException {
 		try {
 			monitor.beginTask("Checking preconditions", 1);
 
@@ -64,19 +73,19 @@ public class LombokRefactoring extends Refactoring {
 			} else {
 				for (IJavaElement element : this.elements) {
 					if (!element.exists()) {
-						status.addError("No type selected");
+						status.addError("Non existing type: " + element.getElementName());
 					}
 					if (!element.isStructureKnown()) {
-						status.addError("No type selected");
+						status.addError("Unknown structure: " + element.getElementName());
 					}
 					if (element instanceof ICompilationUnit) {
 						if (!((ICompilationUnit) element).isConsistent()) {
-							status.addError("No type selected");
+							status.addError("Not consistent: " + element.getElementName());
 						}
 					}
 					if (element instanceof IType) {
 						if (((IType) element).isBinary()) {
-							status.addError("No type selected");
+							status.addError("Refactoring of binary types is not possible: " + element.getElementName());
 						}
 					}
 				}
@@ -87,28 +96,9 @@ public class LombokRefactoring extends Refactoring {
 		}
 	}
 
-	private final <K, V> void put(Map<K, Set<V>> map, K key, V value) {
-		Set<V> set = map.get(key);
-		if (set == null) {
-			set = new HashSet<V>();
-			map.put(key, set);
-		}
-		set.add(value);
-	}
-
-	private final <K, V> void put(Map<K, Set<V>> map, K key,
-			Collection<V> values) {
-		Set<V> set = map.get(key);
-		if (set == null) {
-			set = new HashSet<V>();
-			map.put(key, set);
-		}
-		set.addAll(values);
-	}
-
 	@Override
-	public RefactoringStatus checkFinalConditions(IProgressMonitor monitor)
-			throws CoreException, OperationCanceledException {
+	public RefactoringStatus checkFinalConditions(IProgressMonitor monitor) throws CoreException,
+			OperationCanceledException {
 		try {
 			monitor.beginTask("Sanity check", 1);
 
@@ -116,72 +106,10 @@ public class LombokRefactoring extends Refactoring {
 
 			this.unitChanges.clear();
 
-			IJavaProject selectedProject = null;
-
 			Set<ICompilationUnit> units = new HashSet<ICompilationUnit>();
-			for (IJavaElement element : this.elements) {
-				if (selectedProject == null) {
-					selectedProject = element.getJavaProject();
-				}
-				if (!status.isOK()) {
-					break;
-				}
-				if (element.getElementType() == IJavaElement.COMPILATION_UNIT) {
-					ICompilationUnit unit = (ICompilationUnit) element;
-					IJavaProject javaProject = unit.getJavaProject();
-					if (!javaProject.equals(selectedProject)) {
-						status.addError("Only one project allowed");
-					}
-					units.add(unit);
-				} else if (element.getElementType() == IJavaElement.JAVA_PROJECT) {
-					IJavaProject project = (IJavaProject) element;
-					if (!project.equals(selectedProject)) {
-						status.addError("Only one project allowed");
-					}
-					for (IPackageFragment fragment : project
-							.getPackageFragments()) {
-						units.addAll(Arrays.asList(fragment
-								.getCompilationUnits()));
-					}
-				} else if (element.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-					IPackageFragment packag = (IPackageFragment) element;
-					if (!packag.getJavaProject().equals(selectedProject)) {
-						status.addError("Only one project allowed");
-					}
-					units.addAll(Arrays.asList(packag.getCompilationUnits()));
-				} else if (element.getElementType() == IJavaElement.PACKAGE_FRAGMENT_ROOT) {
-					IPackageFragmentRoot srcFolder = (IPackageFragmentRoot) element;
-					if (!srcFolder.getJavaProject().equals(selectedProject)) {
-						status.addError("Only one project allowed");
-					}
-					for (IJavaElement child : srcFolder.getChildren()) {
-						if (child instanceof IPackageFragment) {
-							IPackageFragment fragment = (IPackageFragment) child;
-							units.addAll(Arrays.asList(fragment
-									.getCompilationUnits()));
-						}
-					}
-				}
-			}
+			IJavaProject selectedProject = queryCompilationUnits(status, units);
 
-			ASTRequestor requestors = new ASTRequestor() {
-
-				@Override
-				public void acceptAST(ICompilationUnit source,
-						CompilationUnit ast) {
-					try {
-						rewriteCompilationUnit(this, source, ast, status);
-					} catch (CoreException exception) {
-						exception.printStackTrace();
-					}
-				}
-			};
-			ASTParser parser = ASTParser.newParser(AST.JLS3);
-			parser.setProject(selectedProject);
-			parser.setResolveBindings(true);
-			parser.createASTs(
-					units.toArray(new ICompilationUnit[units.size()]),
-					new String[0], requestors, new NullProgressMonitor());
+			processCompilationUnits(status, selectedProject, units);
 
 			return status;
 		} finally {
@@ -189,8 +117,74 @@ public class LombokRefactoring extends Refactoring {
 		}
 	}
 
-	protected void rewriteCompilationUnit(ASTRequestor requestor,
-			ICompilationUnit unit, CompilationUnit node,
+	private void processCompilationUnits(final RefactoringStatus status, IJavaProject project,
+			Set<ICompilationUnit> units) {
+		ASTRequestor requestors = new ASTRequestor() {
+
+			@Override
+			public void acceptAST(ICompilationUnit source, CompilationUnit ast) {
+				try {
+					rewriteCompilationUnit(this, source, ast, status);
+				} catch (CoreException exception) {
+					exception.printStackTrace();
+				}
+			}
+		};
+		ASTParser parser = ASTParser.newParser(AST.JLS3);
+		parser.setProject(project);
+		parser.setResolveBindings(true);
+		parser.createASTs(units.toArray(new ICompilationUnit[units.size()]), new String[0], requestors,
+				new NullProgressMonitor());
+	}
+
+	private IJavaProject queryCompilationUnits(final RefactoringStatus status, Set<ICompilationUnit> units)
+			throws JavaModelException {
+		IJavaProject selectedProject = null;
+		for (IJavaElement element : this.elements) {
+			if (selectedProject == null) {
+				selectedProject = element.getJavaProject();
+			}
+			if (!status.isOK()) {
+				break;
+			}
+			if (element.getElementType() == IJavaElement.COMPILATION_UNIT) {
+				ICompilationUnit unit = (ICompilationUnit) element;
+				IJavaProject javaProject = unit.getJavaProject();
+				if (!javaProject.equals(selectedProject)) {
+					status.addError("Only one project allowed");
+				}
+				units.add(unit);
+			} else if (element.getElementType() == IJavaElement.JAVA_PROJECT) {
+				IJavaProject project = (IJavaProject) element;
+				if (!project.equals(selectedProject)) {
+					status.addError("Only one project allowed");
+				}
+				for (IPackageFragment fragment : project.getPackageFragments()) {
+					units.addAll(Arrays.asList(fragment.getCompilationUnits()));
+				}
+			} else if (element.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+				IPackageFragment packag = (IPackageFragment) element;
+				if (!packag.getJavaProject().equals(selectedProject)) {
+					status.addError("Only one project allowed");
+				}
+				units.addAll(Arrays.asList(packag.getCompilationUnits()));
+			} else if (element.getElementType() == IJavaElement.PACKAGE_FRAGMENT_ROOT) {
+				IPackageFragmentRoot srcFolder = (IPackageFragmentRoot) element;
+				if (!srcFolder.getJavaProject().equals(selectedProject)) {
+					status.addError("Only one project allowed");
+				}
+				for (IJavaElement child : srcFolder.getChildren()) {
+					if (child instanceof IPackageFragment) {
+						IPackageFragment fragment = (IPackageFragment) child;
+						units.addAll(Arrays.asList(fragment.getCompilationUnits()));
+					}
+				}
+			}
+		}
+		return selectedProject;
+	}
+
+	protected void rewriteCompilationUnit(ASTRequestor requestor, ICompilationUnit unit, CompilationUnit node,
 			RefactoringStatus status) throws CoreException {
 		ASTRewrite astRewrite = ASTRewrite.create(node.getAST());
 		ImportRewrite importRewrite = ImportRewrite.create(node, true);
@@ -198,45 +192,45 @@ public class LombokRefactoring extends Refactoring {
 		changeGetterSetter(requestor, astRewrite, importRewrite, unit, node);
 
 		rewriteAST(unit, astRewrite, importRewrite);
-
 	}
 
-	private void changeGetterSetter(ASTRequestor requestor,
-			ASTRewrite astRewrite, ImportRewrite importRewrite,
+	private void changeGetterSetter(ASTRequestor requestor, ASTRewrite astRewrite, ImportRewrite importRewrite,
 			ICompilationUnit unit, CompilationUnit node) {
-
-		GetterSetterRefactor x = new GetterSetterRefactor(astRewrite,
-				importRewrite);
-		node.accept(x);
-		x.refactor();
-
+		LombokRefactoringVisitor visitor = new LombokRefactoringVisitor(astRewrite, importRewrite,
+				this.refactorGetters, this.refactorSetters);
+		node.accept(visitor);
+		visitor.refactor();
 	}
 
 	@Override
-	public Change createChange(IProgressMonitor monitor) throws CoreException,
-			OperationCanceledException {
+	public Change createChange(IProgressMonitor monitor) throws CoreException, OperationCanceledException {
 		try {
 			monitor.beginTask("Creating change...", 1);
-			final Collection<TextFileChange> changes = this.unitChanges
-					.values();
-			CompositeChange change = new CompositeChange(getName(),
-					changes.toArray(new Change[changes.size()])) {
+			final Collection<TextFileChange> changes = this.unitChanges.values();
+			CompositeChange change = new CompositeChange(getName(), changes.toArray(new Change[changes.size()])) {
 
 				@Override
 				public ChangeDescriptor getDescriptor() {
-					IJavaProject javaProject = LombokRefactoring.this.elements
-							.iterator().next().getJavaProject();
+
+					StringBuilder elementsBuilder = new StringBuilder();
+					for (IJavaElement e : LombokRefactoring.this.elements) {
+						elementsBuilder.append(e.getHandleIdentifier()).append(";");
+					}
+
+					IJavaProject javaProject = LombokRefactoring.this.elements.iterator().next().getJavaProject();
 					String project = javaProject.getElementName();
-					String comment = MessageFormat.format(
-							"Lombok Refactor for ''{0}''",
-							new Object[] { project });
-					String description = comment;
+					String comment = null;
+					String description = MessageFormat.format("Lombok Refactor for {1} in project ''{0}''",
+							new Object[] { project, getNumberOfElements() });
 					Map<String, String> arguments = new HashMap<String, String>();
-					arguments.put("project", javaProject.getElementName());
-					// FIXME
-					return new RefactoringChangeDescriptor(
-							new LombokRefactoringDescriptor(project,
-									description, comment, arguments));
+					arguments.put(LombokRefactoringDescriptor.ATTRIBUTE_PROJECT, javaProject.getElementName());
+					arguments.put(LombokRefactoringDescriptor.ATTRIBUTE_REFACTOR_GETTERS,
+							String.valueOf(LombokRefactoring.this.refactorGetters));
+					arguments.put(LombokRefactoringDescriptor.ATTRIBUTE_REFACTOR_SETTERS,
+							String.valueOf(LombokRefactoring.this.refactorSetters));
+					arguments.put(LombokRefactoringDescriptor.ATTRIBUTE_ELEMENTS, elementsBuilder.toString());
+					return new RefactoringChangeDescriptor(new LombokRefactoringDescriptor(project, description,
+							comment, arguments));
 				}
 			};
 			return change;
@@ -245,8 +239,7 @@ public class LombokRefactoring extends Refactoring {
 		}
 	}
 
-	private void rewriteAST(ICompilationUnit unit, ASTRewrite astRewrite,
-			ImportRewrite importRewrite) {
+	private void rewriteAST(ICompilationUnit unit, ASTRewrite astRewrite, ImportRewrite importRewrite) {
 		try {
 			MultiTextEdit edit = new MultiTextEdit();
 			TextEdit astEdit = astRewrite.rewriteAST();
@@ -254,8 +247,7 @@ public class LombokRefactoring extends Refactoring {
 			if (!isEmptyEdit(astEdit)) {
 				edit.addChild(astEdit);
 			}
-			TextEdit importEdit = importRewrite
-					.rewriteImports(new NullProgressMonitor());
+			TextEdit importEdit = importRewrite.rewriteImports(new NullProgressMonitor());
 			if (!isEmptyEdit(importEdit)) {
 				edit.addChild(importEdit);
 			}
@@ -263,21 +255,24 @@ public class LombokRefactoring extends Refactoring {
 				return;
 			}
 
-			TextFileChange change = this.unitChanges.get(unit);
-			if (change == null) {
-				change = new TextFileChange(unit.getElementName(),
-						(IFile) unit.getResource());
-				change.setTextType("java");
-				change.setEdit(edit);
-
-				this.unitChanges.put(unit, change);
-			} else {
-				change.getEdit().addChild(edit);
-			}
+			addChange(unit, edit);
 		} catch (MalformedTreeException e) {
-			log(e);
+			LombokEclipsePlugin.log(e);
 		} catch (CoreException e) {
-			log(e);
+			LombokEclipsePlugin.log(e);
+		}
+	}
+
+	private void addChange(ICompilationUnit unit, MultiTextEdit edit) {
+		TextFileChange change = this.unitChanges.get(unit);
+		if (change == null) {
+			change = new TextFileChange(unit.getElementName(), (IFile) unit.getResource());
+			change.setTextType("java");
+			change.setEdit(edit);
+
+			this.unitChanges.put(unit, change);
+		} else {
+			change.getEdit().addChild(edit);
 		}
 	}
 
@@ -285,13 +280,20 @@ public class LombokRefactoring extends Refactoring {
 		return edit.getClass() == MultiTextEdit.class && !edit.hasChildren();
 	}
 
-	private void log(Exception exception) {
-		exception.printStackTrace();
-
-	}
-
 	public void setElements(Collection<IJavaElement> elements) {
 		this.elements = elements;
+	}
+
+	public void refactorGetters(boolean selection) {
+		this.refactorGetters = selection;
+	}
+
+	public void refactorSetters(boolean selection) {
+		this.refactorSetters = selection;
+	}
+
+	public boolean canApply() {
+		return this.refactorSetters || this.refactorGetters;
 	}
 
 }

@@ -5,19 +5,19 @@
          point="org.eclipse.ltk.core.refactoring.refactoringContributions">
       <contribution
             class="lombok.eclipse.refactoring.LombokRefactoringContribution"
-            id="org.projectlombok.refactor">
+            id="lombok.eclipse.refactoring.tolombok">
       </contribution>
    </extension>
    <extension
          point="org.eclipse.ui.popupMenus">
       <objectContribution
             adaptable="false"
-            id="lombok.eclipse.methodRefactor"
+            id="lombok.eclipse.refactoring.contribution"
             objectClass="org.eclipse.jdt.core.IJavaElement">
          <action
                class="lombok.eclipse.actions.LombokRefactorAction"
-               id="lombok.refactoring.test"
-               label="Lombok Test Refactor"
+               id="lombok.eclipse.refactoring.tolombok"
+               label="Use Lombok Annotations..."
                menubarPath="org.eclipse.jdt.ui.refactoring.menu/codingGroup"
                style="push">
          </action>

@@ -6,15 +6,16 @@ import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
 
 public class LombokRefactoringWizard extends RefactoringWizard {
 
-	public LombokRefactoringWizard(LombokRefactoring refactoring,
-			String pageTitle) {
-		super(refactoring, DIALOG_BASED_USER_INTERFACE
-				| PREVIEW_EXPAND_FIRST_NODE);
-		setDefaultPageTitle(pageTitle);
+	private final LombokRefactoring refactoring;
+
+	public LombokRefactoringWizard(LombokRefactoring refactoring) {
+		super(refactoring, WIZARD_BASED_USER_INTERFACE | PREVIEW_EXPAND_FIRST_NODE);
+		this.refactoring = refactoring;
+		setDefaultPageTitle("Refactor boilerplate Java to Lombok");
 	}
 
 	@Override
 	protected void addUserInputPages() {
-		addPage(new LombokRefactoringWizardPage("LombokRefactorWizardPage"));
+		addPage(new LombokRefactoringWizardPage("LombokRefactorWizardPage", this.refactoring));
 	}
 }

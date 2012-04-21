@@ -1,169 +1,85 @@
 package lombok.eclipse.wizards;
 
-import org.eclipse.jdt.internal.corext.refactoring.code.IntroduceIndirectionRefactoring;
+import lombok.eclipse.refactoring.LombokRefactoring;
+
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
 
 public class LombokRefactoringWizardPage extends UserInputWizardPage {
 
-	Text fNameField;
+	private final LombokRefactoring refactoring;
+	private Button setterButton;
+	private Button getterButton;
 
-	Combo fTypeCombo;
-
-	public LombokRefactoringWizardPage(String name) {
+	public LombokRefactoringWizardPage(String name, LombokRefactoring refactoring) {
 		super(name);
+		this.refactoring = refactoring;
 	}
 
+	@Override
 	public void createControl(Composite parent) {
 		Composite result = new Composite(parent, SWT.NONE);
 
 		setControl(result);
 
 		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
+		layout.numColumns = 1;
 		result.setLayout(layout);
 
-		Label label = new Label(result, SWT.NONE);
-		label.setText("&Method name:");
+		setMessage("Select the refactorings to apply for the " + this.refactoring.getNumberOfElements()
+				+ " selected elements.");
 
-		fNameField = createNameField(result);
+		this.getterButton = new Button(result, SWT.CHECK);
+		this.getterButton.setText("Change getters to @Getter annotation");
 
-		label = new Label(result, SWT.NONE);
-		label.setText("&Declaring class:");
+		this.setterButton = new Button(result, SWT.CHECK);
+		this.setterButton.setText("Change setters to @Setter annotation");
 
-		Composite composite = new Composite(result, SWT.NONE);
-		layout = new GridLayout();
-		layout.marginHeight = 0;
-		layout.marginWidth = 0;
-		layout.numColumns = 2;
-		composite.setLayout(layout);
-		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		// ######
+		this.getterButton.addSelectionListener(new SelectionListener() {
 
-		fTypeCombo = createTypeCombo(composite);
-		fTypeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				handleInputChanged();
+			}
 
-		final Button browseButton = new Button(composite, SWT.PUSH);
-		browseButton.setText("&Browse...");
-		GridData data = new GridData();
-		data.horizontalAlignment = GridData.END;
-		browseButton.setLayoutData(data);
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				widgetSelected(e);
+			}
+		});
+		this.setterButton.addSelectionListener(new SelectionListener() {
 
-		final Button referenceButton = new Button(result, SWT.CHECK);
-		referenceButton.setText("&Update references");
-		data = new GridData(GridData.FILL_HORIZONTAL);
-		data.horizontalSpan = 2;
-		data.verticalIndent = 2;
-		referenceButton.setLayoutData(data);
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				handleInputChanged();
+			}
 
-		// final IntroduceIndirectionRefactoring refactoring=
-		// getIntroduceIndirectionRefactoring();
-		// fNameField.setText(refactoring.getMethodName());
-		// fTypeCombo.setText(refactoring.getDeclaringType().getFullyQualifiedName());
-		//
-		// fNameField.addModifyListener(new ModifyListener() {
-		//
-		// public void modifyText(ModifyEvent event) {
-		// handleInputChanged();
-		// }
-		// });
-		//
-		// referenceButton.addSelectionListener(new SelectionAdapter() {
-		//
-		// @Override
-		// public void widgetSelected(SelectionEvent event) {
-		// refactoring.setUpdateReferences(referenceButton.getSelection());
-		// }
-		// });
-		//
-		// fTypeCombo.addModifyListener(new ModifyListener() {
-		//
-		// public void modifyText(ModifyEvent event) {
-		// handleInputChanged();
-		// }
-		// });
-		//
-		// browseButton.addSelectionListener(new SelectionAdapter() {
-		//
-		// @Override
-		// public void widgetSelected(SelectionEvent event) {
-		// IType type= selectDeclaringType();
-		// if (type == null)
-		// return;
-		//
-		// fTypeCombo.setText(type.getFullyQualifiedName());
-		// }
-		// });
-		//
-		// referenceButton.setSelection(true);
-		//
-		fNameField.setFocus();
-		fNameField.selectAll();
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				widgetSelected(e);
+			}
+		});
+
+		// ######
+
+		this.getterButton.setSelection(true);
+		this.setterButton.setSelection(true);
+
+		// ######
+
 		handleInputChanged();
 	}
 
-	private Text createNameField(Composite result) {
-		Text field = new Text(result, SWT.SINGLE | SWT.LEFT | SWT.BORDER);
-		field.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		return field;
-	}
-
-	private Combo createTypeCombo(Composite composite) {
-		Combo combo = new Combo(composite, SWT.SINGLE | SWT.BORDER);
-		combo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		combo.setVisibleItemCount(4);
-		return combo;
-	}
-
-	private IntroduceIndirectionRefactoring getIntroduceIndirectionRefactoring() {
-		return (IntroduceIndirectionRefactoring) getRefactoring();
-	}
-
 	void handleInputChanged() {
-		// RefactoringStatus status= new RefactoringStatus();
-		// IntroduceIndirectionRefactoring refactoring=
-		// getIntroduceIndirectionRefactoring();
-		// status.merge(refactoring.setDeclaringTypeName(fTypeCombo.getText()));
-		// status.merge(refactoring.setMethodName(fNameField.getText()));
-		//
-		// setPageComplete(!status.hasError());
-		// int severity= status.getSeverity();
-		// String message= status.getMessageMatchingSeverity(severity);
-		// if (severity >= RefactoringStatus.INFO) {
-		// setMessage(message, severity);
-		// } else {
-		//			setMessage("", NONE); //$NON-NLS-1$
-		// }
-		setPageComplete(true);
+		this.refactoring.refactorGetters(this.getterButton.getSelection());
+		this.refactoring.refactorSetters(this.setterButton.getSelection());
+		setPageComplete(this.refactoring.canApply());
 	}
 
-	// IType selectDeclaringType() {
-	// IJavaProject project=
-	// getIntroduceIndirectionRefactoring().getMethod().getJavaProject();
-	//
-	// IJavaElement[] elements= new IJavaElement[] { project};
-	// IJavaSearchScope scope= SearchEngine.createJavaSearchScope(elements);
-	//
-	// try {
-	// SelectionStatusDialog dialog= (SelectionStatusDialog)
-	// JavaUI.createTypeDialog(getShell(), getContainer(), scope,
-	// IJavaElementSearchConstants.CONSIDER_CLASSES_AND_ENUMS, false);
-	//
-	// dialog.setTitle("Choose declaring type");
-	// dialog.setMessage("Choose the type where to declare the indirection method:");
-	//
-	// if (dialog.open() == Window.OK)
-	// return (IType) dialog.getFirstResult();
-	//
-	// } catch (JavaModelException exception) {
-	// RefactoringPlugin.log(exception);
-	// }
-	// return null;
-	// }
 }

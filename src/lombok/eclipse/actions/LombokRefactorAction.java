@@ -36,18 +36,18 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 		if (!this.elements.isEmpty()) {
 			LombokRefactoring refactoring = new LombokRefactoring();
 			refactoring.setElements(new ArrayList<IJavaElement>(this.elements));
-			run(new LombokRefactoringWizard(refactoring, "Lombok Refactor"),
-					this.activePart.getSite().getShell(), "Lombok Refactor");
+			run(new LombokRefactoringWizard(refactoring), this.activePart.getSite().getShell(),
+					"Refactor to Lombok Annotations");
 		}
 	}
 
-	public void run(RefactoringWizard wizard, Shell parent, String dialogTitle) {
+	public void run(RefactoringWizard wizard, Shell parent, String failedCheckDialogTitle) {
 		try {
-			RefactoringWizardOpenOperation operation = new RefactoringWizardOpenOperation(
-					wizard);
-			operation.run(parent, dialogTitle);
+			RefactoringWizardOpenOperation operation = new RefactoringWizardOpenOperation(wizard);
+			operation.run(parent, failedCheckDialogTitle);
 		} catch (InterruptedException exception) {
-			Thread.currentThread().interrupt();
+			// if the initial condition checking got canceled by the user.
+			// do nothing, just return
 		}
 	}
 
@@ -58,10 +58,8 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 			IStructuredSelection extended = (IStructuredSelection) selection;
 			for (Iterator<Object> it = extended.iterator(); it.hasNext();) {
 				Object o = it.next();
-				if (o instanceof IType || o instanceof ICompilationUnit
-						|| o instanceof IPackageFragment
-						|| o instanceof IPackageFragmentRoot
-						|| o instanceof IJavaProject) {
+				if (o instanceof IType || o instanceof ICompilationUnit || o instanceof IPackageFragment
+						|| o instanceof IPackageFragmentRoot || o instanceof IJavaProject) {
 					this.elements.add((IJavaElement) o);
 				} else {
 					System.out.println(o.getClass().getName());

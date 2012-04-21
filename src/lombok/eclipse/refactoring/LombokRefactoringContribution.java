@@ -18,11 +18,9 @@ public class LombokRefactoringContribution extends RefactoringContribution {
 	}
 
 	@Override
-	public RefactoringDescriptor createDescriptor(String id, String project,
-			String description, String comment, Map arguments, int flags)
-			throws IllegalArgumentException {
-		return new LombokRefactoringDescriptor(project, description, comment,
-				arguments);
+	public RefactoringDescriptor createDescriptor(String id, String project, String description, String comment,
+			Map arguments, int flags) throws IllegalArgumentException {
+		return new LombokRefactoringDescriptor(project, description, comment, arguments);
 	}
 
 	@Override

@@ -24,12 +24,12 @@ package lombok.eclipse.internal;
 public final class LombokIdentifiers {
 
 	//TODO change to use Lombok Project
-	public static final String ACCESS_LEVEL_PACKAGE = "PACKAGE";
-	public static final String ACCESS_LEVEL_PROTECTED = "PROTECTED";
-	public static final String ACCESS_LEVEL_PRIVATE = "PRIVATE";
-	public static final String LOMBOK_ACCESS_LEVEL = "lombok.AccessLevel";
-	public static final String LOMBOK_GETTER = "lombok.Getter";
-	public static final String LOMBOK_SETTER = "lombok.Setter";
+	public static final String ACCESS_LEVEL_PACKAGE = "PACKAGE"; //$NON-NLS-1$
+	public static final String ACCESS_LEVEL_PROTECTED = "PROTECTED"; //$NON-NLS-1$
+	public static final String ACCESS_LEVEL_PRIVATE = "PRIVATE"; //$NON-NLS-1$
+	public static final String LOMBOK_ACCESS_LEVEL = "lombok.AccessLevel"; //$NON-NLS-1$
+	public static final String LOMBOK_GETTER = "lombok.Getter"; //$NON-NLS-1$
+	public static final String LOMBOK_SETTER = "lombok.Setter"; //$NON-NLS-1$
 
 	private LombokIdentifiers() {
 		throw new AssertionError();

@@ -82,7 +82,7 @@ public final class ASTUtils {
 
 		static {
 			try {
-				generatedByField = ASTNode.class.getDeclaredField("$isGenerated");
+				generatedByField = ASTNode.class.getDeclaredField("$isGenerated"); //$NON-NLS-1$
 			} catch (Throwable t) {
 				// ignore - no $generatedBy exists when running in ecj.
 			}

@@ -21,10 +21,12 @@
  */
 package lombok.eclipse.actions;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import lombok.eclipse.i18n.Messages;
 import lombok.eclipse.internal.LombokEclipsePlugin.Logger;
 import lombok.eclipse.refactoring.LombokRefactoring;
 import lombok.eclipse.refactoring.RefactoringElement;
@@ -55,7 +57,7 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 			LombokRefactoring refactoring = new LombokRefactoring();
 			refactoring.setElements(new ArrayList<RefactoringElement>(this.elements));
 			run(new LombokRefactoringWizard(refactoring), this.activePart.getSite().getShell(),
-					"Refactor to Lombok Annotations");
+					Messages.LombokRefactorAction_wizard_title);
 		}
 	}
 
@@ -92,7 +94,7 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 		if (element != null) {
 			this.elements.add(element);
 		} else {
-			Logger.warn("Unsupported element selected: " + o.getClass().getName());
+			Logger.warn(MessageFormat.format(Messages.LombokRefactorAction_unsupported_element, o.getClass().getName()));
 		}
 	}
 

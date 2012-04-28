@@ -73,9 +73,9 @@ public class LombokRefactoringVisitor extends ASTVisitor {
 			return true;
 		}
 		String identifier = node.getName().getIdentifier();
-		if (this.refactorGetters && (identifier.startsWith("get") || identifier.startsWith("is"))) {
+		if (this.refactorGetters && (identifier.startsWith("get") || identifier.startsWith("is"))) { //$NON-NLS-1$ //$NON-NLS-2$
 			analzyeGetter(node);
-		} else if (this.refactorSetters && identifier.startsWith("set")) {
+		} else if (this.refactorSetters && identifier.startsWith("set")) { //$NON-NLS-1$
 			analyzeSetter(node);
 		}
 

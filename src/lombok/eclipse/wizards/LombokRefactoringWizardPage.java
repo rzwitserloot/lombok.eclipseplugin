@@ -21,6 +21,9 @@
  */
 package lombok.eclipse.wizards;
 
+import java.text.MessageFormat;
+
+import lombok.eclipse.i18n.Messages;
 import lombok.eclipse.refactoring.LombokRefactoring;
 
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
@@ -52,14 +55,13 @@ public class LombokRefactoringWizardPage extends UserInputWizardPage {
 		layout.numColumns = 1;
 		result.setLayout(layout);
 
-		setMessage("Select the refactorings to apply for the " + this.refactoring.getNumberOfElements()
-				+ " selected elements.");
+		setMessage(MessageFormat.format(Messages.LombokRefactoringWizardPage_message, this.refactoring.getNumberOfElements()));
 
 		this.getterButton = new Button(result, SWT.CHECK);
-		this.getterButton.setText("Change getters to @Getter annotation");
+		this.getterButton.setText(Messages.LombokRefactoringWizardPage_getter_check);
 
 		this.setterButton = new Button(result, SWT.CHECK);
-		this.setterButton.setText("Change setters to @Setter annotation");
+		this.setterButton.setText(Messages.LombokRefactoringWizardPage_setter_check);
 
 		// ######
 		this.getterButton.addSelectionListener(new SelectionListener() {

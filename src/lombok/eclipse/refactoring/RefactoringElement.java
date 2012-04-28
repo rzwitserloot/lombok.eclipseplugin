@@ -21,11 +21,14 @@
  */
 package lombok.eclipse.refactoring;
 
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import lombok.eclipse.i18n.Messages;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
@@ -78,7 +81,7 @@ public interface RefactoringElement {
 
 		public ARefactoringElement(IJavaElement element) {
 			if (element.getElementType() != getElementType()) {
-				throw new IllegalArgumentException("Element does not match expected type: " + getElementType());
+				throw new IllegalArgumentException(MessageFormat.format(Messages.RefactoringElement_does_not_match_type, getElementType()));
 			}
 			this.element = element;
 		}
@@ -86,10 +89,10 @@ public interface RefactoringElement {
 		@Override
 		public void updateStatus(RefactoringStatus status) throws JavaModelException {
 			if (!element.exists()) {
-				status.addError("Non existing type: " + element.getElementName());
+				status.addError(MessageFormat.format(Messages.RefactoringElement_non_existing_type, element.getElementName()));
 			}
 			if (!element.isStructureKnown()) {
-				status.addError("Unknown structure: " + element.getElementName());
+				status.addError(MessageFormat.format(Messages.RefactoringElement_unknown_structure, element.getElementName()));
 			}
 		}
 
@@ -123,7 +126,7 @@ public interface RefactoringElement {
 		
 		@Override
 		public String getTypeName() {
-			return "Type";
+			return Messages.RefactoringElement_type_name_type;
 		}
 
 		@Override
@@ -136,7 +139,7 @@ public interface RefactoringElement {
 		@Override
 		public void updateStatus(RefactoringStatus status) throws JavaModelException {
 			if (((IType) element).isBinary()) {
-				status.addError("Refactoring of binary types is not possible: " + element.getElementName());
+				status.addError(MessageFormat.format(Messages.RefactoringElement_impossible_binary, element.getElementName()));
 			}
 			super.updateStatus(status);
 		}
@@ -156,7 +159,7 @@ public interface RefactoringElement {
 		
 		@Override
 		public String getTypeName() {
-			return "Compilation Unit";
+			return Messages.RefactoringElement_type_name_compilation_unit;
 		}
 
 		@Override
@@ -168,7 +171,7 @@ public interface RefactoringElement {
 		@Override
 		public void updateStatus(RefactoringStatus status) throws JavaModelException {
 			if (!((ICompilationUnit) element).isConsistent()) {
-				status.addError("Not consistent: " + element.getElementName());
+				status.addError(MessageFormat.format(Messages.RefactoringElement_not_consistent, element.getElementName()));
 			}
 			super.updateStatus(status);
 		}
@@ -188,7 +191,7 @@ public interface RefactoringElement {
 		
 		@Override
 		public String getTypeName() {
-			return "Package";
+			return Messages.RefactoringElement_type_name_package;
 		}
 
 		@Override
@@ -212,7 +215,7 @@ public interface RefactoringElement {
 		
 		@Override
 		public String getTypeName() {
-			return "Package Root";
+			return Messages.RefactoringElement_type_name_package_root;
 		}
 
 		@Override
@@ -241,7 +244,7 @@ public interface RefactoringElement {
 		
 		@Override
 		public String getTypeName() {
-			return "Project";
+			return Messages.RefactoringElement_type_name_project;
 		}
 
 		@Override

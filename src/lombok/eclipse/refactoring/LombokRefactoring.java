@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.eclipse.i18n.Messages;
 import lombok.eclipse.internal.LombokEclipsePlugin.Logger;
 import lombok.eclipse.refactoring.LombokRefactoringDescriptor.Attributes;
 
@@ -65,7 +66,7 @@ public class LombokRefactoring extends Refactoring {
 
 	@Override
 	public String getName() {
-		return "Use Lombok Annotations";
+		return Messages.LombokRefactoring_title;
 	}
 
 	public int getNumberOfElements() {
@@ -76,11 +77,11 @@ public class LombokRefactoring extends Refactoring {
 	public RefactoringStatus checkInitialConditions(IProgressMonitor monitor) throws CoreException,
 			OperationCanceledException {
 		try {
-			monitor.beginTask("Checking preconditions", 1);
+			monitor.beginTask(Messages.LombokRefactoring_initial_condition_monitor_begin, 1);
 
 			RefactoringStatus status = new RefactoringStatus();
 			if (this.elements == null || this.elements.isEmpty()) {
-				status.addError("No type(s) selected");
+				status.addError(Messages.LombokRefactoring_no_types);
 			} else {
 				for (RefactoringElement element : this.elements) {
 					element.updateStatus(status);
@@ -96,7 +97,7 @@ public class LombokRefactoring extends Refactoring {
 	public RefactoringStatus checkFinalConditions(IProgressMonitor monitor) throws CoreException,
 			OperationCanceledException {
 		try {
-			monitor.beginTask("Sanity check", 1);
+			monitor.beginTask(Messages.LombokRefactoring_final_condition_monitor_begin, 1);
 
 			final RefactoringStatus status = new RefactoringStatus();
 
@@ -116,7 +117,7 @@ public class LombokRefactoring extends Refactoring {
 	@Override
 	public Change createChange(IProgressMonitor monitor) throws CoreException, OperationCanceledException {
 		try {
-			monitor.beginTask("Creating change...", 1);
+			monitor.beginTask(Messages.LombokRefactoring_create_change_monitor_begin, 1);
 			final Collection<TextFileChange> changes = this.unitChanges.values();
 			final CompositeChange change = new LombokCompositeChange(getName(), changes);
 			return change;
@@ -134,7 +135,7 @@ public class LombokRefactoring extends Refactoring {
 					selectedProject = element.getJavaProject();
 				}
 				if (!element.getJavaProject().equals(selectedProject)) {
-					throw new IllegalStateException("Only one project allowed");
+					throw new IllegalStateException(Messages.LombokRefactoring_more_than_one_project);
 				}
 
 				units.addAll(element.getCompilationUnits());
@@ -210,7 +211,7 @@ public class LombokRefactoring extends Refactoring {
 		TextFileChange change = this.unitChanges.get(unit);
 		if (change == null) {
 			change = new TextFileChange(unit.getElementName(), (IFile) unit.getResource());
-			change.setTextType("java");
+			change.setTextType("java"); //$NON-NLS-1$
 			change.setEdit(edit);
 
 			this.unitChanges.put(unit, change);
@@ -240,7 +241,7 @@ public class LombokRefactoring extends Refactoring {
 	}
 
 	private static final String LINE_DELIMITER = System.getProperty("line.separator", "\n"); //$NON-NLS-1$ //$NON-NLS-2$
-	private static final String ITEM = "- ";
+	private static final String ITEM = "- "; //$NON-NLS-1$
 
 	private final class LombokCompositeChange extends CompositeChange {
 
@@ -253,17 +254,21 @@ public class LombokRefactoring extends Refactoring {
 			IJavaProject javaProject = LombokRefactoring.this.elements.iterator().next().getJavaProject();
 			String project = javaProject.getElementName();
 			String description = MessageFormat.format(
-					"Changing {1} elements in project ''{0}'' to use Lombok annotations", new Object[] { project,
+					Messages.LombokRefactoring_change_description, new Object[] { project,
 							getNumberOfElements() });
 			StringBuilder comments = new StringBuilder();
-			comments.append(ITEM).append("Project: ").append(javaProject.getElementName()).append(LINE_DELIMITER);
-			comments.append(ITEM).append("Refactoring Getter: ")
-					.append(String.valueOf(LombokRefactoring.this.refactorGetters)).append(LINE_DELIMITER);
-			comments.append(ITEM).append("Refactoring Setter: ")
-					.append(String.valueOf(LombokRefactoring.this.refactorSetters)).append(LINE_DELIMITER);
-			comments.append(ITEM).append("Selected Elements: ");
+			comments.append(ITEM).append(MessageFormat.format(Messages.LombokRefactoring_change_comment_project, javaProject.getElementName()))
+					.append(LINE_DELIMITER);
+			comments.append(ITEM)
+					.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_getter,
+							String.valueOf(LombokRefactoring.this.refactorGetters))).append(LINE_DELIMITER);
+			comments.append(ITEM)
+					.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_setter,
+							String.valueOf(LombokRefactoring.this.refactorSetters))).append(LINE_DELIMITER);
+			comments.append(ITEM).append(Messages.LombokRefactoring_change_comment_elements_title);
 			for (RefactoringElement element : LombokRefactoring.this.elements) {
-				comments.append(element.getTypeName()).append(" '").append(element.getElementName()).append("'").append(", ");
+				comments.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_element, element.getTypeName(), element.getElementName()))
+						.append(", "); //$NON-NLS-1$
 			}
 			comments.append(LINE_DELIMITER);
 

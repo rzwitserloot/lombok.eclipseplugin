@@ -25,6 +25,7 @@ import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashMap;
 
+import lombok.eclipse.i18n.Messages;
 import lombok.eclipse.internal.LombokEclipsePlugin.Logger;
 
 import org.eclipse.core.runtime.CoreException;
@@ -37,9 +38,9 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 
-	public static final String ID = "lombok.eclipse.refactoring.tolombok";
-	
-	private static final String UNKNOWN = "unknown";
+	public static final String ID = "lombok.eclipse.refactoring.tolombok"; //$NON-NLS-1$
+
+	private static final String UNKNOWN = "unknown"; //$NON-NLS-1$
 
 	private final Attributes arguments = new Attributes();
 
@@ -68,9 +69,7 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 				LombokRefactoringContribution lombokContrib = (LombokRefactoringContribution) contribution;
 				refactoring = lombokContrib.createRefactoring(this, status);
 			} else {
-				String message = MessageFormat
-						.format("Refactoring contribution registered for id '{0}' returned null as result of createDescriptor(String, String, String, String, Map, int)",
-								new Object[] { id });
+				String message = MessageFormat.format(Messages.LombokRefactoringDescriptor_not_registered, id);
 				Logger.error(message);
 			}
 		}
@@ -81,10 +80,10 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 
 		private static final long serialVersionUID = 4870727884514586453L;
 
-		public static final String ATTRIBUTE_PROJECT = "project";
-		public static final String ATTRIBUTE_REFACTOR_GETTERS = "getters";
-		public static final String ATTRIBUTE_REFACTOR_SETTERS = "setters";
-		public static final String ATTRIBUTE_ELEMENTS = "elements";
+		public static final String ATTRIBUTE_PROJECT = "project"; //$NON-NLS-1$
+		public static final String ATTRIBUTE_REFACTOR_GETTERS = "getters"; //$NON-NLS-1$
+		public static final String ATTRIBUTE_REFACTOR_SETTERS = "setters"; //$NON-NLS-1$
+		public static final String ATTRIBUTE_ELEMENTS = "elements"; //$NON-NLS-1$
 
 		protected void setProject(IJavaProject project) {
 			put(ATTRIBUTE_PROJECT, project.getElementName());
@@ -101,7 +100,7 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 		protected void setElements(Collection<RefactoringElement> elements) {
 			StringBuilder elementsBuilder = new StringBuilder();
 			for (RefactoringElement e : elements) {
-				elementsBuilder.append(e.getHandleIdentifier()).append(";");
+				elementsBuilder.append(e.getHandleIdentifier()).append(";"); //$NON-NLS-1$
 			}
 
 			put(ATTRIBUTE_ELEMENTS, elementsBuilder.toString());

@@ -21,6 +21,7 @@
  */
 package lombok.eclipse.wizards;
 
+import lombok.eclipse.i18n.Messages;
 import lombok.eclipse.refactoring.LombokRefactoring;
 
 import org.eclipse.ltk.ui.refactoring.RefactoringWizard;
@@ -32,11 +33,11 @@ public class LombokRefactoringWizard extends RefactoringWizard {
 	public LombokRefactoringWizard(LombokRefactoring refactoring) {
 		super(refactoring, WIZARD_BASED_USER_INTERFACE | PREVIEW_EXPAND_FIRST_NODE);
 		this.refactoring = refactoring;
-		setDefaultPageTitle("Refactor boilerplate Java to Lombok");
+		setDefaultPageTitle(Messages.LombokRefactoringWizard_title);
 	}
 
 	@Override
 	protected void addUserInputPages() {
-		addPage(new LombokRefactoringWizardPage("LombokRefactorWizardPage", this.refactoring));
+		addPage(new LombokRefactoringWizardPage("LombokRefactorWizardPage", this.refactoring)); //$NON-NLS-1$
 	}
 }

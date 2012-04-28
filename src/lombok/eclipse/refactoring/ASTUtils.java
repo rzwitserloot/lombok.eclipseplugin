@@ -36,40 +36,71 @@ public final class ASTUtils {
 		throw new AssertionError();
 	}
 
+	/**
+	 * Resolves and returns the binding for the given node, if there's a
+	 * binding.
+	 * 
+	 * @param node
+	 * @return The resolved binding of the node or <code>null</code> if none was
+	 *         found.
+	 */
 	public static IBinding getBinding(ASTNode node) {
 		BindingFinder finder = new BindingFinder();
 		node.accept(finder);
 		return finder.getBinding();
 	}
 
+	/**
+	 * Get the statements of the body of the given method.
+	 * 
+	 * @param node
+	 *            The method
+	 * @return A List of statements from the body of the method.
+	 * @see org.eclipse.jdt.core.dom.Block#statements()
+	 */
 	public static List<ASTNode> getStatements(MethodDeclaration node) {
 		@SuppressWarnings("unchecked")
 		List<ASTNode> statements = node.getBody().statements();
 		return statements;
 	}
 
-	private static Field generatedByField;
-
-	static {
-		try {
-			generatedByField = ASTNode.class.getDeclaredField("$isGenerated");
-		} catch (Throwable t) {
-			// ignore - no $generatedBy exists when running in ecj.
-		}
+	/**
+	 * Determines if the given node was auto-generated instead of beeing created
+	 * from hand-written code.
+	 * 
+	 * @param node
+	 * @return <code>true</code> if the code was generated (f.e. by Lombok)
+	 */
+	public static boolean isGenerated(ASTNode node) {
+		return GeneratedBy.isGenerated(node);
 	}
 
-	public static Boolean getGeneratedBy(ASTNode node) {
-		if (generatedByField != null) {
+	// #####
+
+	private static class GeneratedBy {
+		private static Field generatedByField;
+
+		static {
 			try {
-				return (Boolean) generatedByField.get(node);
-			} catch (Exception e) {
+				generatedByField = ASTNode.class.getDeclaredField("$isGenerated");
+			} catch (Throwable t) {
+				// ignore - no $generatedBy exists when running in ecj.
 			}
 		}
-		return Boolean.FALSE;
-	}
 
-	public static boolean isGenerated(ASTNode node) {
-		return Boolean.TRUE.equals(getGeneratedBy(node));
+		public static Boolean getGeneratedBy(ASTNode node) {
+			if (generatedByField != null) {
+				try {
+					return (Boolean) generatedByField.get(node);
+				} catch (Exception e) {
+				}
+			}
+			return Boolean.FALSE;
+		}
+
+		public static boolean isGenerated(ASTNode node) {
+			return Boolean.TRUE.equals(getGeneratedBy(node));
+		}
 	}
 
 	private static class BindingFinder extends ASTVisitor {

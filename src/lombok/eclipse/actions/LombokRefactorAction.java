@@ -25,15 +25,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import lombok.eclipse.internal.LombokEclipsePlugin.Logger;
 import lombok.eclipse.refactoring.LombokRefactoring;
+import lombok.eclipse.refactoring.RefactoringElement;
 import lombok.eclipse.wizards.LombokRefactoringWizard;
 
-import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -46,7 +43,7 @@ import org.eclipse.ui.IWorkbenchPart;
 public class LombokRefactorAction implements IObjectActionDelegate {
 
 	private IWorkbenchPart activePart;
-	private final List<IJavaElement> elements = new ArrayList<IJavaElement>();
+	private final List<RefactoringElement> elements = new ArrayList<RefactoringElement>();
 
 	public void dispose() {
 		// Do nothing
@@ -56,7 +53,7 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 	public void run(IAction action) {
 		if (!this.elements.isEmpty()) {
 			LombokRefactoring refactoring = new LombokRefactoring();
-			refactoring.setElements(new ArrayList<IJavaElement>(this.elements));
+			refactoring.setElements(new ArrayList<RefactoringElement>(this.elements));
 			run(new LombokRefactoringWizard(refactoring), this.activePart.getSite().getShell(),
 					"Refactor to Lombok Annotations");
 		}
@@ -79,12 +76,7 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 			IStructuredSelection extended = (IStructuredSelection) selection;
 			for (Iterator<?> it = extended.iterator(); it.hasNext();) {
 				Object o = it.next();
-				if (o instanceof IType || o instanceof ICompilationUnit || o instanceof IPackageFragment
-						|| o instanceof IPackageFragmentRoot || o instanceof IJavaProject) {
-					this.elements.add((IJavaElement) o);
-				} else {
-					System.out.println(o.getClass().getName());
-				}
+				checkAndAddSelectedElement(o);
 			}
 		}
 		action.setEnabled(!this.elements.isEmpty());
@@ -93,6 +85,23 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 	@Override
 	public void setActivePart(IAction action, IWorkbenchPart activePart) {
 		this.activePart = activePart;
+	}
 
+	private void checkAndAddSelectedElement(Object o) {
+		RefactoringElement element = isSupportedElement(o);
+		if (element != null) {
+			this.elements.add(element);
+		} else {
+			Logger.warn("Unsupported element selected: " + o.getClass().getName());
+		}
+	}
+
+	private RefactoringElement isSupportedElement(Object o) {
+		if (o instanceof IJavaElement) {
+			RefactoringElement supported = RefactoringElement.Factory.create((IJavaElement) o);
+			return supported;
+		} else {
+			return null;
+		}
 	}
 }

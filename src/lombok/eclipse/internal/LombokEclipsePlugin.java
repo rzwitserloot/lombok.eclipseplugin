@@ -77,16 +77,27 @@ public class LombokEclipsePlugin extends AbstractUIPlugin {
 	 * @return the shared instance
 	 */
 	public static LombokEclipsePlugin getDefault() {
-
 		return plugin;
 	}
+	
+	public static class Logger {
 
-	public static void log(Exception e) {
-		getDefault().getLog().log(new Status(IStatus.ERROR, PLUGIN_ID, e.getMessage(), e));
-	}
+		public static void error(Exception e) {
+			LombokEclipsePlugin.getDefault().getLog().log(new Status(IStatus.ERROR, LombokEclipsePlugin.PLUGIN_ID, e.getMessage(), e));
+		}
 
-	public static void log(String message, Exception e) {
-		getDefault().getLog().log(new Status(IStatus.ERROR, PLUGIN_ID, message, e));
+		public static void error(String message, Exception e) {
+			LombokEclipsePlugin.getDefault().getLog().log(new Status(IStatus.ERROR, LombokEclipsePlugin.PLUGIN_ID, message, e));
+		}
+
+		public static void error(String message) {
+			LombokEclipsePlugin.getDefault().getLog().log(new Status(IStatus.ERROR, LombokEclipsePlugin.PLUGIN_ID, message));
+		}
+
+		public static void warn(String message) {
+			LombokEclipsePlugin.getDefault().getLog().log(new Status(IStatus.WARNING, LombokEclipsePlugin.PLUGIN_ID, message));
+		}
+		
 	}
 
 }

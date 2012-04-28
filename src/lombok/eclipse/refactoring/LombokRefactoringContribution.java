@@ -23,8 +23,11 @@ package lombok.eclipse.refactoring;
 
 import java.util.Map;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringContribution;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
+import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 /**
  * 
@@ -38,20 +41,24 @@ public class LombokRefactoringContribution extends RefactoringContribution {
 		return new LombokRefactoringDescriptor();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public RefactoringDescriptor createDescriptor(String id, String project, String description, String comment,
-			Map arguments, int flags) throws IllegalArgumentException {
-		return new LombokRefactoringDescriptor(project, description, comment, arguments);
+			@SuppressWarnings("rawtypes") Map arguments, int flags) throws IllegalArgumentException {
+		LombokRefactoringDescriptor descr = new LombokRefactoringDescriptor(project, description, comment);
+		descr.getArguments().putAll(arguments);
+		return descr;
 	}
 
-	@Override
-	public String getId() {
-		return LombokRefactoringDescriptor.ID;
-	}
-
+	@SuppressWarnings("rawtypes")
 	@Override
 	public Map retrieveArgumentMap(RefactoringDescriptor descriptor) {
 		return ((LombokRefactoringDescriptor) descriptor).getArguments();
+	}
+
+	public Refactoring createRefactoring(LombokRefactoringDescriptor descriptor, RefactoringStatus status)
+			throws CoreException {
+		return new LombokRefactoring();
 	}
 
 }

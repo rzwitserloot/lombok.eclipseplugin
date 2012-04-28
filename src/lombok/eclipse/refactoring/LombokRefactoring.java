@@ -239,7 +239,11 @@ public class LombokRefactoring extends Refactoring {
 		return this.refactorSetters || this.refactorGetters;
 	}
 
+	private static final String LINE_DELIMITER = System.getProperty("line.separator", "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+	private static final String ITEM = "- ";
+
 	private final class LombokCompositeChange extends CompositeChange {
+
 		private LombokCompositeChange(String name, Collection<TextFileChange> changes) {
 			super(name, changes.toArray(new Change[changes.size()]));
 		}
@@ -248,10 +252,23 @@ public class LombokRefactoring extends Refactoring {
 		public ChangeDescriptor getDescriptor() {
 			IJavaProject javaProject = LombokRefactoring.this.elements.iterator().next().getJavaProject();
 			String project = javaProject.getElementName();
-			String description = MessageFormat.format("Lombok Refactor for {1} in project ''{0}''", new Object[] {
-					project, getNumberOfElements() });
+			String description = MessageFormat.format(
+					"Changing {1} elements in project ''{0}'' to use Lombok annotations", new Object[] { project,
+							getNumberOfElements() });
+			StringBuilder comments = new StringBuilder();
+			comments.append(ITEM).append("Project: ").append(javaProject.getElementName()).append(LINE_DELIMITER);
+			comments.append(ITEM).append("Refactoring Getter: ")
+					.append(String.valueOf(LombokRefactoring.this.refactorGetters)).append(LINE_DELIMITER);
+			comments.append(ITEM).append("Refactoring Setter: ")
+					.append(String.valueOf(LombokRefactoring.this.refactorSetters)).append(LINE_DELIMITER);
+			comments.append(ITEM).append("Selected Elements: ");
+			for (RefactoringElement element : LombokRefactoring.this.elements) {
+				comments.append(element.getTypeName()).append(" '").append(element.getElementName()).append("'").append(", ");
+			}
+			comments.append(LINE_DELIMITER);
 
-			LombokRefactoringDescriptor descr = new LombokRefactoringDescriptor(project, description, null);
+			LombokRefactoringDescriptor descr = new LombokRefactoringDescriptor(project, description,
+					comments.toString());
 			Attributes arguments = descr.getArguments();
 			arguments.setProject(javaProject);
 			arguments.setRefactorGetters(LombokRefactoring.this.refactorGetters);

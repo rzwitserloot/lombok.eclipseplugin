@@ -43,6 +43,10 @@ public interface RefactoringElement {
 	public Collection<ICompilationUnit> getCompilationUnits() throws JavaModelException;
 
 	public String getHandleIdentifier();
+	
+	public String getElementName();
+	
+	public String getTypeName();
 
 	public IJavaProject getJavaProject();
 
@@ -93,6 +97,11 @@ public interface RefactoringElement {
 		public String getHandleIdentifier() {
 			return element.getHandleIdentifier();
 		}
+		
+		@Override
+		public String getElementName() {
+			return element.getElementName();
+		}
 
 		@Override
 		public IJavaProject getJavaProject() {
@@ -110,6 +119,11 @@ public interface RefactoringElement {
 		@Override
 		public int getElementType() {
 			return IJavaElement.TYPE;
+		}
+		
+		@Override
+		public String getTypeName() {
+			return "Type";
 		}
 
 		@Override
@@ -139,6 +153,11 @@ public interface RefactoringElement {
 		public int getElementType() {
 			return IJavaElement.COMPILATION_UNIT;
 		}
+		
+		@Override
+		public String getTypeName() {
+			return "Compilation Unit";
+		}
 
 		@Override
 		public Collection<ICompilationUnit> getCompilationUnits() {
@@ -166,6 +185,11 @@ public interface RefactoringElement {
 		public int getElementType() {
 			return IJavaElement.PACKAGE_FRAGMENT;
 		}
+		
+		@Override
+		public String getTypeName() {
+			return "Package";
+		}
 
 		@Override
 		public Collection<ICompilationUnit> getCompilationUnits() throws JavaModelException {
@@ -184,6 +208,11 @@ public interface RefactoringElement {
 		@Override
 		public int getElementType() {
 			return IJavaElement.PACKAGE_FRAGMENT_ROOT;
+		}  
+		
+		@Override
+		public String getTypeName() {
+			return "Package Root";
 		}
 
 		@Override
@@ -208,6 +237,11 @@ public interface RefactoringElement {
 		@Override
 		public int getElementType() {
 			return IJavaElement.JAVA_PROJECT;
+		}
+		
+		@Override
+		public String getTypeName() {
+			return "Project";
 		}
 
 		@Override

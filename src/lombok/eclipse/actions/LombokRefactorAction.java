@@ -29,6 +29,7 @@ import java.util.List;
 import lombok.eclipse.i18n.Messages;
 import lombok.eclipse.internal.LombokEclipsePlugin.Logger;
 import lombok.eclipse.refactoring.LombokRefactoring;
+import lombok.eclipse.refactoring.LombokRefactoringDescriptor;
 import lombok.eclipse.refactoring.RefactoringElement;
 import lombok.eclipse.wizards.LombokRefactoringWizard;
 
@@ -54,8 +55,9 @@ public class LombokRefactorAction implements IObjectActionDelegate {
 	@Override
 	public void run(IAction action) {
 		if (!this.elements.isEmpty()) {
-			LombokRefactoring refactoring = new LombokRefactoring();
-			refactoring.setElements(new ArrayList<RefactoringElement>(this.elements));
+			LombokRefactoringDescriptor descriptor = new LombokRefactoringDescriptor();
+			descriptor.getArguments().setElements(this.elements);
+			LombokRefactoring refactoring = new LombokRefactoring(descriptor);
 			run(new LombokRefactoringWizard(refactoring), this.activePart.getSite().getShell(),
 					Messages.LombokRefactorAction_wizard_title);
 		}

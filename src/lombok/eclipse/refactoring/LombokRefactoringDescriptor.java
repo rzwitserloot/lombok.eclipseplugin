@@ -33,13 +33,17 @@ import lombok.eclipse.internal.LombokEclipsePlugin.Logger;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.ltk.core.refactoring.ChangeDescriptor;
 import org.eclipse.ltk.core.refactoring.Refactoring;
+import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringContribution;
 import org.eclipse.ltk.core.refactoring.RefactoringCore;
 import org.eclipse.ltk.core.refactoring.RefactoringDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 
 public class LombokRefactoringDescriptor extends RefactoringDescriptor {
+	private static final String LINE_DELIMITER = System.getProperty("line.separator", "\n"); //$NON-NLS-1$ //$NON-NLS-2$
+	private static final String ITEM = "- "; //$NON-NLS-1$
 
 	public static final String ID = "lombok.eclipse.refactoring.tolombok"; //$NON-NLS-1$
 
@@ -55,7 +59,7 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 		super(ID, project, description, comment, RefactoringDescriptor.NONE);
 	}
 
-	protected Attributes getArguments() {
+	public Attributes getArguments() {
 		return this.arguments;
 	}
 
@@ -71,8 +75,6 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 			if (contribution instanceof LombokRefactoringContribution) {
 				LombokRefactoringContribution lombokContrib = (LombokRefactoringContribution) contribution;
 				refactoring = (LombokRefactoring) lombokContrib.createRefactoring(this, status);
-				refactoring.setElements(getArguments().getElements());
-				refactoring.refactorToString(getArguments().isRefactorToString());
 			} else {
 				String message = MessageFormat.format(Messages.LombokRefactoringDescriptor_not_registered, id);
 				Logger.error(message);
@@ -81,7 +83,49 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 		return refactoring;
 	}
 
-	protected static class Attributes extends HashMap<String, String> {
+	public ChangeDescriptor getChange() {
+		Attributes oldArguments = getArguments();
+		Collection<RefactoringElement> elements = oldArguments.getElements();
+
+		IJavaProject javaProject = elements.iterator().next().getJavaProject();
+		String project = javaProject.getElementName();
+		String description = MessageFormat.format(Messages.LombokRefactoring_change_description, new Object[] {
+				project, elements.size() });
+
+		StringBuilder comments = new StringBuilder();
+		comments.append(ITEM)
+				.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_project,
+						javaProject.getElementName())).append(LINE_DELIMITER);
+		comments.append(ITEM)
+				.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_getter,
+						String.valueOf(oldArguments.isRefactorGetters()))).append(LINE_DELIMITER);
+		comments.append(ITEM)
+				.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_setter,
+						String.valueOf(oldArguments.isRefactorSetters()))).append(LINE_DELIMITER);
+		comments.append(ITEM)
+				.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_equals_hashcode,
+						String.valueOf(oldArguments.isRefactorEqualsHashCode()))).append(LINE_DELIMITER);
+		comments.append(ITEM)
+				.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_tostring,
+						String.valueOf(oldArguments.isRefactorToString()))).append(LINE_DELIMITER);
+		comments.append(ITEM).append(Messages.LombokRefactoring_change_comment_elements_title);
+		for (RefactoringElement element : elements) {
+			comments.append(
+					MessageFormat.format(Messages.LombokRefactoring_change_comment_element, element.getTypeName(),
+							element.getElementName())).append(", "); //$NON-NLS-1$
+		}
+		comments.append(LINE_DELIMITER);
+
+		LombokRefactoringDescriptor descr = new LombokRefactoringDescriptor(project, description, comments.toString());
+		Attributes arguments = descr.getArguments();
+		arguments.putAll(oldArguments);
+		arguments.setProject(javaProject);
+		arguments.setElements(elements);
+
+		return new RefactoringChangeDescriptor(descr);
+	}
+
+	public static class Attributes extends HashMap<String, String> {
 
 		private static final long serialVersionUID = 4870727884514586453L;
 
@@ -92,37 +136,49 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 		public static final String ATTRIBUTE_REFACTOR_TOSTRING = "toString"; //$NON-NLS-1$
 		public static final String ATTRIBUTE_ELEMENTS = "elements"; //$NON-NLS-1$
 
-		protected void setProject(IJavaProject project) {
+		public void setProject(IJavaProject project) {
 			put(ATTRIBUTE_PROJECT, project.getElementName());
 		}
 
-		protected void setRefactorGetters(boolean refactorGetters) {
+		public void setRefactorGetters(boolean refactorGetters) {
 			put(ATTRIBUTE_REFACTOR_GETTERS, String.valueOf(refactorGetters));
 		}
 
-		protected void setRefactorSetters(boolean refactorSetters) {
+		public void setRefactorSetters(boolean refactorSetters) {
 			put(ATTRIBUTE_REFACTOR_SETTERS, String.valueOf(refactorSetters));
 		}
 
-		protected void setRefactorEqualsAndHashCode(boolean refactor) {
+		public void setRefactorEqualsAndHashCode(boolean refactor) {
 			put(ATTRIBUTE_REFACTOR_EQUALS_HASHCODE, String.valueOf(refactor));
 		}
 
-		protected void setRefactorToString(boolean refactor) {
+		public void setRefactorToString(boolean refactor) {
 			put(ATTRIBUTE_REFACTOR_TOSTRING, String.valueOf(refactor));
 		}
 
-		public boolean isRefactorToString() {
-			return Boolean.parseBoolean(get(ATTRIBUTE_REFACTOR_TOSTRING));
-		}
-
-		protected void setElements(Collection<RefactoringElement> elements) {
+		public void setElements(Collection<RefactoringElement> elements) {
 			StringBuilder elementsBuilder = new StringBuilder();
 			for (RefactoringElement e : elements) {
 				elementsBuilder.append(e.getHandleIdentifier()).append(";"); //$NON-NLS-1$
 			}
 
 			put(ATTRIBUTE_ELEMENTS, elementsBuilder.toString());
+		}
+
+		public boolean isRefactorToString() {
+			return Boolean.parseBoolean(get(ATTRIBUTE_REFACTOR_TOSTRING));
+		}
+
+		public boolean isRefactorGetters() {
+			return Boolean.parseBoolean(get(ATTRIBUTE_REFACTOR_GETTERS));
+		}
+
+		public boolean isRefactorSetters() {
+			return Boolean.parseBoolean(get(ATTRIBUTE_REFACTOR_SETTERS));
+		}
+
+		public boolean isRefactorEqualsHashCode() {
+			return Boolean.parseBoolean(get(ATTRIBUTE_REFACTOR_EQUALS_HASHCODE));
 		}
 
 		protected Collection<RefactoringElement> getElements() {

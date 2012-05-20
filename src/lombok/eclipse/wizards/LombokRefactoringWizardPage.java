@@ -25,6 +25,8 @@ import java.text.MessageFormat;
 
 import lombok.eclipse.i18n.Messages;
 import lombok.eclipse.refactoring.LombokRefactoring;
+import lombok.eclipse.refactoring.LombokRefactoringDescriptor;
+import lombok.eclipse.refactoring.LombokRefactoringDescriptor.Attributes;
 
 import org.eclipse.ltk.ui.refactoring.UserInputWizardPage;
 import org.eclipse.swt.SWT;
@@ -104,10 +106,13 @@ public class LombokRefactoringWizardPage extends UserInputWizardPage {
 	}
 
 	void handleInputChanged() {
-		this.refactoring.refactorGetters(this.getterButton.getSelection());
-		this.refactoring.refactorSetters(this.setterButton.getSelection());
-		this.refactoring.refactorEqualsHashCode(this.equalsHashCodeButton.getSelection());
-		this.refactoring.refactorToString(this.toStringButton.getSelection());
+		LombokRefactoringDescriptor descriptor = this.refactoring.getDescriptor();
+		Attributes arguments = descriptor.getArguments();
+
+		arguments.setRefactorGetters(this.getterButton.getSelection());
+		arguments.setRefactorSetters(this.setterButton.getSelection());
+		arguments.setRefactorEqualsAndHashCode(this.equalsHashCodeButton.getSelection());
+		arguments.setRefactorToString(this.toStringButton.getSelection());
 		setPageComplete(this.refactoring.canApply());
 	}
 

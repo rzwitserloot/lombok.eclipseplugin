@@ -58,7 +58,7 @@ public class LombokRefactoringContribution extends RefactoringContribution {
 
 	public Refactoring createRefactoring(LombokRefactoringDescriptor descriptor, RefactoringStatus status)
 			throws CoreException {
-		return new LombokRefactoring();
+		return new LombokRefactoring(descriptor);
 	}
 
 }

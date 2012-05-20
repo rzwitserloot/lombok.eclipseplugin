@@ -21,10 +21,11 @@
  */
 package lombok.eclipse.refactoring;
 
-import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,7 +51,6 @@ import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.ChangeDescriptor;
 import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.ltk.core.refactoring.Refactoring;
-import org.eclipse.ltk.core.refactoring.RefactoringChangeDescriptor;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
 import org.eclipse.text.edits.MalformedTreeException;
@@ -60,11 +60,13 @@ import org.eclipse.text.edits.TextEdit;
 public class LombokRefactoring extends Refactoring {
 
 	private final Map<ICompilationUnit, TextFileChange> unitChanges = new LinkedHashMap<ICompilationUnit, TextFileChange>();
-	private Collection<RefactoringElement> elements;
-	private boolean refactorSetters;
-	private boolean refactorGetters;
-	private boolean refactorToString;
-	private boolean refactorEqualsHashCode;
+	private final LombokRefactoringDescriptor descriptor;
+	private final List<RefactoringElement> elements;
+
+	public LombokRefactoring(LombokRefactoringDescriptor descriptor) {
+		this.descriptor = descriptor;
+		this.elements = new ArrayList<RefactoringElement>(descriptor.getArguments().getElements());
+	}
 
 	@Override
 	public String getName() {
@@ -73,6 +75,10 @@ public class LombokRefactoring extends Refactoring {
 
 	public int getNumberOfElements() {
 		return this.elements.size();
+	}
+
+	public LombokRefactoringDescriptor getDescriptor() {
+		return this.descriptor;
 	}
 
 	@Override
@@ -226,48 +232,11 @@ public class LombokRefactoring extends Refactoring {
 		return edit.getClass() == MultiTextEdit.class && !edit.hasChildren();
 	}
 
-	public void setElements(Collection<RefactoringElement> elements) {
-		this.elements = elements;
-	}
-
-	public void refactorGetters(boolean selection) {
-		this.refactorGetters = selection;
-	}
-
-	public void refactorSetters(boolean selection) {
-		this.refactorSetters = selection;
-	}
-
-	public void refactorToString(boolean selection) {
-		this.refactorToString = selection;
-	}
-
-	public void refactorEqualsHashCode(boolean selection) {
-		this.refactorEqualsHashCode = selection;
-	}
-
 	public boolean canApply() {
-		return this.refactorSetters || this.refactorGetters || this.refactorEqualsHashCode || this.refactorToString;
+		Attributes arguments = this.descriptor.getArguments();
+		return arguments.isRefactorEqualsHashCode() || arguments.isRefactorGetters() || arguments.isRefactorSetters()
+				|| arguments.isRefactorToString();
 	}
-
-	public boolean isRefactorGetters() {
-		return this.refactorGetters;
-	}
-
-	public boolean isRefactorSetters() {
-		return this.refactorSetters;
-	}
-
-	public boolean isRefactorEqualsHashCode() {
-		return this.refactorEqualsHashCode;
-	}
-
-	public boolean isRefactorToString() {
-		return this.refactorToString;
-	}
-
-	private static final String LINE_DELIMITER = System.getProperty("line.separator", "\n"); //$NON-NLS-1$ //$NON-NLS-2$
-	private static final String ITEM = "- "; //$NON-NLS-1$
 
 	private final class LombokCompositeChange extends CompositeChange {
 
@@ -277,45 +246,7 @@ public class LombokRefactoring extends Refactoring {
 
 		@Override
 		public ChangeDescriptor getDescriptor() {
-			IJavaProject javaProject = LombokRefactoring.this.elements.iterator().next().getJavaProject();
-			String project = javaProject.getElementName();
-			String description = MessageFormat.format(Messages.LombokRefactoring_change_description, new Object[] {
-					project, getNumberOfElements() });
-			StringBuilder comments = new StringBuilder();
-			comments.append(ITEM)
-					.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_project,
-							javaProject.getElementName())).append(LINE_DELIMITER);
-			comments.append(ITEM)
-					.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_getter,
-							String.valueOf(LombokRefactoring.this.refactorGetters))).append(LINE_DELIMITER);
-			comments.append(ITEM)
-					.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_setter,
-							String.valueOf(LombokRefactoring.this.refactorSetters))).append(LINE_DELIMITER);
-			comments.append(ITEM)
-					.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_equals_hashcode, String.valueOf(LombokRefactoring.this.refactorEqualsHashCode)))
-					.append(LINE_DELIMITER);
-			comments.append(ITEM)
-					.append(MessageFormat.format(Messages.LombokRefactoring_change_comment_tostring, String.valueOf(LombokRefactoring.this.refactorToString)))
-					.append(LINE_DELIMITER);
-			comments.append(ITEM).append(Messages.LombokRefactoring_change_comment_elements_title);
-			for (RefactoringElement element : LombokRefactoring.this.elements) {
-				comments.append(
-						MessageFormat.format(Messages.LombokRefactoring_change_comment_element, element.getTypeName(),
-								element.getElementName())).append(", "); //$NON-NLS-1$
-			}
-			comments.append(LINE_DELIMITER);
-
-			LombokRefactoringDescriptor descr = new LombokRefactoringDescriptor(project, description,
-					comments.toString());
-			Attributes arguments = descr.getArguments();
-			arguments.setProject(javaProject);
-			arguments.setRefactorGetters(LombokRefactoring.this.refactorGetters);
-			arguments.setRefactorSetters(LombokRefactoring.this.refactorSetters);
-			arguments.setRefactorEqualsAndHashCode(LombokRefactoring.this.refactorEqualsHashCode);
-			arguments.setRefactorToString(LombokRefactoring.this.refactorToString);
-			arguments.setElements(LombokRefactoring.this.elements);
-
-			return new RefactoringChangeDescriptor(descr);
+			return LombokRefactoring.this.descriptor.getChange();
 		}
 	}
 

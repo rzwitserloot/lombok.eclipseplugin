@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import lombok.eclipse.internal.LombokIdentifiers;
+import lombok.eclipse.refactoring.LombokRefactoringDescriptor.Attributes;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -76,15 +77,17 @@ public class LombokRefactoringVisitor extends ASTVisitor {
 			return true;
 		}
 		String identifier = node.getName().getIdentifier();
-		if (this.refactoring.isRefactorGetters() && (identifier.startsWith("get") || identifier.startsWith("is"))) { //$NON-NLS-1$ //$NON-NLS-2$
+		LombokRefactoringDescriptor descriptor = this.refactoring.getDescriptor();
+		Attributes arguments = descriptor.getArguments();
+		if (arguments.isRefactorGetters() && (identifier.startsWith("get") || identifier.startsWith("is"))) { //$NON-NLS-1$ //$NON-NLS-2$
 			analzyeGetter(node);
-		} else if (this.refactoring.isRefactorSetters() && identifier.startsWith("set")) { //$NON-NLS-1$
+		} else if (arguments.isRefactorSetters() && identifier.startsWith("set")) { //$NON-NLS-1$
 			analyzeSetter(node);
-		} else if (this.refactoring.isRefactorEqualsHashCode() && (identifier.startsWith("equals"))) { //$NON-NLS-1$
+		} else if (arguments.isRefactorEqualsHashCode() && (identifier.startsWith("equals"))) { //$NON-NLS-1$
 			analyzeEquals(node);// TODO canEqual
-		} else if (this.refactoring.isRefactorEqualsHashCode() && (identifier.startsWith("hashCode"))) { //$NON-NLS-1$
+		} else if (arguments.isRefactorEqualsHashCode() && (identifier.startsWith("hashCode"))) { //$NON-NLS-1$
 			analyzeHashCode(node);
-		} else if (this.refactoring.isRefactorToString() && identifier.startsWith("toString")) { //$NON-NLS-1$
+		} else if (arguments.isRefactorToString() && identifier.startsWith("toString")) { //$NON-NLS-1$
 			analyzeToString(node);
 		}
 

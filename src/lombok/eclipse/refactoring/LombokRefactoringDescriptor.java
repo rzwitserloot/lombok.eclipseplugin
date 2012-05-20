@@ -22,14 +22,17 @@
 package lombok.eclipse.refactoring;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import lombok.eclipse.i18n.Messages;
 import lombok.eclipse.internal.LombokEclipsePlugin.Logger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringContribution;
 import org.eclipse.ltk.core.refactoring.RefactoringCore;
@@ -61,13 +64,15 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 	 */
 	@Override
 	public Refactoring createRefactoring(final RefactoringStatus status) throws CoreException {
-		Refactoring refactoring = null;
+		LombokRefactoring refactoring = null;
 		final String id = getID();
 		final RefactoringContribution contribution = RefactoringCore.getRefactoringContribution(id);
 		if (contribution != null) {
 			if (contribution instanceof LombokRefactoringContribution) {
 				LombokRefactoringContribution lombokContrib = (LombokRefactoringContribution) contribution;
-				refactoring = lombokContrib.createRefactoring(this, status);
+				refactoring = (LombokRefactoring) lombokContrib.createRefactoring(this, status);
+				refactoring.setElements(getArguments().getElements());
+				refactoring.refactorToString(getArguments().isRefactorToString());
 			} else {
 				String message = MessageFormat.format(Messages.LombokRefactoringDescriptor_not_registered, id);
 				Logger.error(message);
@@ -107,6 +112,10 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 			put(ATTRIBUTE_REFACTOR_TOSTRING, String.valueOf(refactor));
 		}
 
+		public boolean isRefactorToString() {
+			return Boolean.parseBoolean(get(ATTRIBUTE_REFACTOR_TOSTRING));
+		}
+
 		protected void setElements(Collection<RefactoringElement> elements) {
 			StringBuilder elementsBuilder = new StringBuilder();
 			for (RefactoringElement e : elements) {
@@ -114,6 +123,21 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 			}
 
 			put(ATTRIBUTE_ELEMENTS, elementsBuilder.toString());
+		}
+
+		protected Collection<RefactoringElement> getElements() {
+			List<RefactoringElement> elements = new ArrayList<RefactoringElement>();
+			String string = get(ATTRIBUTE_ELEMENTS);
+
+			String[] split = string.split(";");
+			if (split != null) {
+				for (String s : split) {
+					if (s.trim().length() > 0) {
+						elements.add(RefactoringElement.Factory.create(JavaCore.create(s)));
+					}
+				}
+			}
+			return elements;
 		}
 
 	}

@@ -84,7 +84,7 @@ public class LombokRefactoringVisitor extends ASTVisitor {
 			analyzeEquals(node);// TODO canEqual
 		} else if (this.refactoring.isRefactorEqualsHashCode() && (identifier.startsWith("hashCode"))) { //$NON-NLS-1$
 			analyzeHashCode(node);
-		} else if (this.refactoring.isRefactorEqualsHashCode() && identifier.startsWith("toString")) { //$NON-NLS-1$
+		} else if (this.refactoring.isRefactorToString() && identifier.startsWith("toString")) { //$NON-NLS-1$
 			analyzeToString(node);
 		}
 

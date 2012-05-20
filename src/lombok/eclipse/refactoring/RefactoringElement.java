@@ -46,9 +46,9 @@ public interface RefactoringElement {
 	public Collection<ICompilationUnit> getCompilationUnits() throws JavaModelException;
 
 	public String getHandleIdentifier();
-	
+
 	public String getElementName();
-	
+
 	public String getTypeName();
 
 	public IJavaProject getJavaProject();
@@ -69,7 +69,7 @@ public interface RefactoringElement {
 			if (element.getElementType() == IJavaElement.PACKAGE_FRAGMENT_ROOT) {
 				return new PackageRootRefactoringElement(element);
 			}
-			if (element.getElementType() == IJavaElement.TYPE) {
+			if (element.getElementType() == IJavaElement.TYPE || element.getElementType() == IJavaElement.JAVA_PROJECT) {
 				return new ProjectRefactoringElement(element);
 			}
 			return null;
@@ -81,7 +81,8 @@ public interface RefactoringElement {
 
 		public ARefactoringElement(IJavaElement element) {
 			if (element.getElementType() != getElementType()) {
-				throw new IllegalArgumentException(MessageFormat.format(Messages.RefactoringElement_does_not_match_type, getElementType()));
+				throw new IllegalArgumentException(MessageFormat.format(
+						Messages.RefactoringElement_does_not_match_type, getElementType()));
 			}
 			this.element = element;
 		}
@@ -89,10 +90,12 @@ public interface RefactoringElement {
 		@Override
 		public void updateStatus(RefactoringStatus status) throws JavaModelException {
 			if (!element.exists()) {
-				status.addError(MessageFormat.format(Messages.RefactoringElement_non_existing_type, element.getElementName()));
+				status.addError(MessageFormat.format(Messages.RefactoringElement_non_existing_type,
+						element.getElementName()));
 			}
 			if (!element.isStructureKnown()) {
-				status.addError(MessageFormat.format(Messages.RefactoringElement_unknown_structure, element.getElementName()));
+				status.addError(MessageFormat.format(Messages.RefactoringElement_unknown_structure,
+						element.getElementName()));
 			}
 		}
 
@@ -100,7 +103,7 @@ public interface RefactoringElement {
 		public String getHandleIdentifier() {
 			return element.getHandleIdentifier();
 		}
-		
+
 		@Override
 		public String getElementName() {
 			return element.getElementName();
@@ -123,7 +126,7 @@ public interface RefactoringElement {
 		public int getElementType() {
 			return IJavaElement.TYPE;
 		}
-		
+
 		@Override
 		public String getTypeName() {
 			return Messages.RefactoringElement_type_name_type;
@@ -139,7 +142,8 @@ public interface RefactoringElement {
 		@Override
 		public void updateStatus(RefactoringStatus status) throws JavaModelException {
 			if (((IType) element).isBinary()) {
-				status.addError(MessageFormat.format(Messages.RefactoringElement_impossible_binary, element.getElementName()));
+				status.addError(MessageFormat.format(Messages.RefactoringElement_impossible_binary,
+						element.getElementName()));
 			}
 			super.updateStatus(status);
 		}
@@ -156,7 +160,7 @@ public interface RefactoringElement {
 		public int getElementType() {
 			return IJavaElement.COMPILATION_UNIT;
 		}
-		
+
 		@Override
 		public String getTypeName() {
 			return Messages.RefactoringElement_type_name_compilation_unit;
@@ -171,7 +175,8 @@ public interface RefactoringElement {
 		@Override
 		public void updateStatus(RefactoringStatus status) throws JavaModelException {
 			if (!((ICompilationUnit) element).isConsistent()) {
-				status.addError(MessageFormat.format(Messages.RefactoringElement_not_consistent, element.getElementName()));
+				status.addError(MessageFormat.format(Messages.RefactoringElement_not_consistent,
+						element.getElementName()));
 			}
 			super.updateStatus(status);
 		}
@@ -188,7 +193,7 @@ public interface RefactoringElement {
 		public int getElementType() {
 			return IJavaElement.PACKAGE_FRAGMENT;
 		}
-		
+
 		@Override
 		public String getTypeName() {
 			return Messages.RefactoringElement_type_name_package;
@@ -211,8 +216,8 @@ public interface RefactoringElement {
 		@Override
 		public int getElementType() {
 			return IJavaElement.PACKAGE_FRAGMENT_ROOT;
-		}  
-		
+		}
+
 		@Override
 		public String getTypeName() {
 			return Messages.RefactoringElement_type_name_package_root;
@@ -241,7 +246,7 @@ public interface RefactoringElement {
 		public int getElementType() {
 			return IJavaElement.JAVA_PROJECT;
 		}
-		
+
 		@Override
 		public String getTypeName() {
 			return Messages.RefactoringElement_type_name_project;

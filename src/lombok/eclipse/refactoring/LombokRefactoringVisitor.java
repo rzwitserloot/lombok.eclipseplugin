@@ -44,21 +44,24 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ImportRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
 public class LombokRefactoringVisitor extends ASTVisitor {
 
 	private final List<FieldDeclaration> fields = new ArrayList<FieldDeclaration>();
 	private final List<MethodDeclaration> getters = new ArrayList<MethodDeclaration>();
 	private final List<MethodDeclaration> setters = new ArrayList<MethodDeclaration>();
+	private final List<MethodDeclaration> equalsHashCode = new ArrayList<MethodDeclaration>();
+	private final List<MethodDeclaration> toString = new ArrayList<MethodDeclaration>();
 
-	private final boolean refactorGetters;
-	private final boolean refactorSetters;
+	private final LombokRefactoring refactoring;
 
-	public LombokRefactoringVisitor(boolean refactorGetters, boolean refactorSetters) {
-		this.refactorGetters = refactorGetters;
-		this.refactorSetters = refactorSetters;
+	public LombokRefactoringVisitor(LombokRefactoring refactoring) {
+		this.refactoring = refactoring;
 	}
 
 	@Override
@@ -73,10 +76,16 @@ public class LombokRefactoringVisitor extends ASTVisitor {
 			return true;
 		}
 		String identifier = node.getName().getIdentifier();
-		if (this.refactorGetters && (identifier.startsWith("get") || identifier.startsWith("is"))) { //$NON-NLS-1$ //$NON-NLS-2$
+		if (this.refactoring.isRefactorGetters() && (identifier.startsWith("get") || identifier.startsWith("is"))) { //$NON-NLS-1$ //$NON-NLS-2$
 			analzyeGetter(node);
-		} else if (this.refactorSetters && identifier.startsWith("set")) { //$NON-NLS-1$
+		} else if (this.refactoring.isRefactorSetters() && identifier.startsWith("set")) { //$NON-NLS-1$
 			analyzeSetter(node);
+		} else if (this.refactoring.isRefactorEqualsHashCode() && (identifier.startsWith("equals"))) { //$NON-NLS-1$
+			analyzeEquals(node);// TODO canEqual
+		} else if (this.refactoring.isRefactorEqualsHashCode() && (identifier.startsWith("hashCode"))) { //$NON-NLS-1$
+			analyzeHashCode(node);
+		} else if (this.refactoring.isRefactorEqualsHashCode() && identifier.startsWith("toString")) { //$NON-NLS-1$
+			analyzeToString(node);
 		}
 
 		return true;
@@ -86,6 +95,8 @@ public class LombokRefactoringVisitor extends ASTVisitor {
 		LombokRewriter rewriter = new LombokRewriter(astRewrite, importRewrite, this);
 		rewriter.refactorGetters();
 		rewriter.refactorSetters();
+		rewriter.refactorEqualsHashCode();
+		rewriter.refactorToString();
 	}
 
 	private void analzyeGetter(MethodDeclaration node) {
@@ -113,6 +124,43 @@ public class LombokRefactoringVisitor extends ASTVisitor {
 		}
 	}
 
+	private void analyzeToString(MethodDeclaration node) {
+		if (Modifier.isPublic(node.getModifiers())) {
+			if (node.getReturnType2().resolveBinding().getQualifiedName().equals(String.class.getName())) {
+				List<?> parameters = node.parameters();
+				if (parameters.isEmpty()) {
+					this.toString.add(node);
+				}
+			}
+		}
+	}
+
+	private void analyzeEquals(MethodDeclaration node) {
+		if (Modifier.isPublic(node.getModifiers())) {
+			if (node.getReturnType2().resolveBinding().getQualifiedName().equals(boolean.class.getName())) {
+				@SuppressWarnings("unchecked")
+				List<SingleVariableDeclaration> parameters = node.parameters();
+				if (parameters.size() == 1) {
+					SingleVariableDeclaration parameterNode = parameters.get(0);
+					if (parameterNode.getType().resolveBinding().getQualifiedName().equals(Object.class.getName())) {
+						this.equalsHashCode.add(node);
+					}
+				}
+			}
+		}
+	}
+
+	private void analyzeHashCode(MethodDeclaration node) {
+		if (Modifier.isPublic(node.getModifiers())) {
+			if (node.getReturnType2().resolveBinding().getQualifiedName().equals(int.class.getName())) {
+				List<?> parameters = node.parameters();
+				if (parameters.isEmpty()) {
+					this.equalsHashCode.add(node);
+				}
+			}
+		}
+	}
+
 	private static class LombokRewriter {
 
 		private final ImportRewrite importRewrite;
@@ -134,6 +182,18 @@ public class LombokRefactoringVisitor extends ASTVisitor {
 		private void refactorGetters() {
 			for (MethodDeclaration method : this.visitor.getters) {
 				refactorGetter(method);
+			}
+		}
+
+		private void refactorEqualsHashCode() {
+			for (MethodDeclaration method : this.visitor.equalsHashCode) {
+				refactorEqualsHashCode(method);
+			}
+		}
+
+		private void refactorToString() {
+			for (MethodDeclaration method : this.visitor.toString) {
+				refactorToString(method);
 			}
 		}
 
@@ -169,29 +229,59 @@ public class LombokRefactoringVisitor extends ASTVisitor {
 			}
 		}
 
-		private void addAnnotationToField(FieldDeclaration field, String annotationName, int modifiers) {
-			// import lombok.AccessLevel;
-			// PUBLIC, PROTECTED, PACKAGE, and PRIVATE.
-			final Annotation annotation;
-			if (Modifier.isPublic(modifiers)) {
-				// default
-				MarkerAnnotation newMarkerAnnotation = field.getAST().newMarkerAnnotation();
-				annotation = newMarkerAnnotation;
-			} else {
-				String accessLevelType = this.importRewrite.addImport(LombokIdentifiers.LOMBOK_ACCESS_LEVEL);
+		private void refactorEqualsHashCode(MethodDeclaration method) {
+			String annotationType = this.importRewrite.addImport(LombokIdentifiers.LOMBOK_EQUALS_HASHCODE);
+			addAnnotationToType(method, annotationType);
 
-				SingleMemberAnnotation singleAnnotation = field.getAST().newSingleMemberAnnotation();
+			this.astRewrite.remove(method, null);
+		}
 
-				FieldAccess newFieldAccess = field.getAST().newFieldAccess();
-				newFieldAccess.setExpression(field.getAST().newSimpleName(accessLevelType));
-				newFieldAccess.setName(field.getAST().newSimpleName(getFieldNameForModifier(modifiers)));
-				singleAnnotation.setValue(newFieldAccess);
+		private void refactorToString(MethodDeclaration method) {
+			String annotationType = this.importRewrite.addImport(LombokIdentifiers.LOMBOK_TOSTRING);
 
-				annotation = singleAnnotation;
+			addAnnotationToType(method, annotationType);
+
+			this.astRewrite.remove(method, null);
+		}
+
+		public void addAnnotationToType(MethodDeclaration method, String annotationType) {
+			TypeDeclaration typeNode = (TypeDeclaration) method.getParent();
+
+			if (!ASTUtils.isAnnotationPresent(this.astRewrite, typeNode, annotationType)) {
+				MarkerAnnotation annotation = typeNode.getAST().newMarkerAnnotation();
+				annotation.setTypeName(typeNode.getAST().newName(annotationType));
+
+				ListRewrite listRewrite = this.astRewrite.getListRewrite(typeNode, typeNode.getModifiersProperty());
+				listRewrite.insertFirst(annotation, null);
 			}
-			annotation.setTypeName(field.getAST().newName(annotationName));
 
-			this.astRewrite.getListRewrite(field, field.getModifiersProperty()).insertFirst(annotation, null);
+		}
+
+		private void addAnnotationToField(FieldDeclaration field, String annotationName, int modifiers) {
+			if (!ASTUtils.isAnnotationPresent(this.astRewrite, field, annotationName)) {
+				// import lombok.AccessLevel;
+				// PUBLIC, PROTECTED, PACKAGE, and PRIVATE.
+				final Annotation annotation;
+				if (Modifier.isPublic(modifiers)) {
+					// default
+					MarkerAnnotation newMarkerAnnotation = field.getAST().newMarkerAnnotation();
+					annotation = newMarkerAnnotation;
+				} else {
+					String accessLevelType = this.importRewrite.addImport(LombokIdentifiers.LOMBOK_ACCESS_LEVEL);
+
+					SingleMemberAnnotation singleAnnotation = field.getAST().newSingleMemberAnnotation();
+
+					FieldAccess newFieldAccess = field.getAST().newFieldAccess();
+					newFieldAccess.setExpression(field.getAST().newSimpleName(accessLevelType));
+					newFieldAccess.setName(field.getAST().newSimpleName(getFieldNameForModifier(modifiers)));
+					singleAnnotation.setValue(newFieldAccess);
+
+					annotation = singleAnnotation;
+				}
+				annotation.setTypeName(field.getAST().newName(annotationName));
+
+				this.astRewrite.getListRewrite(field, field.getModifiersProperty()).insertFirst(annotation, null);
+			}
 		}
 
 		private String getFieldNameForModifier(int modifiers) {

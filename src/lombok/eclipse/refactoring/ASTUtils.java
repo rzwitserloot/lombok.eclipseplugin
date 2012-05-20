@@ -22,18 +22,51 @@
 package lombok.eclipse.refactoring;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
 public final class ASTUtils {
 
 	private ASTUtils() {
 		throw new AssertionError();
+	}
+
+	public static boolean isAnnotationPresent(ASTNode node, String annotationName) {
+		AnnotationFinder finder = new AnnotationFinder();
+		node.accept(finder);
+
+		for (Annotation annotation : finder.getAnnotations()) {
+			String typeName = annotation.getTypeName().getFullyQualifiedName();
+			if (typeName.equals(annotationName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static boolean isAnnotationPresent(ASTRewrite astRewrite, BodyDeclaration node, String annotationName) {
+		ListRewrite listRewrite = astRewrite.getListRewrite(node, node.getModifiersProperty());
+		for (Object o : listRewrite.getRewrittenList()) {
+			if (ASTUtils.isAnnotationPresent((ASTNode) o, annotationName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -59,8 +92,13 @@ public final class ASTUtils {
 	 * @see org.eclipse.jdt.core.dom.Block#statements()
 	 */
 	public static List<ASTNode> getStatements(MethodDeclaration node) {
+		Block body = node.getBody();
+		if (body == null) {
+			// abstract method/interface
+			return Collections.emptyList();
+		}
 		@SuppressWarnings("unchecked")
-		List<ASTNode> statements = node.getBody().statements();
+		List<ASTNode> statements = body.statements();
 		return statements;
 	}
 
@@ -101,6 +139,34 @@ public final class ASTUtils {
 		public static boolean isGenerated(ASTNode node) {
 			return Boolean.TRUE.equals(getGeneratedBy(node));
 		}
+	}
+
+	private static class AnnotationFinder extends ASTVisitor {
+
+		private final List<Annotation> annotations = new ArrayList<Annotation>();
+
+		@Override
+		public boolean visit(MarkerAnnotation node) {
+			this.annotations.add(node);
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(NormalAnnotation node) {
+			this.annotations.add(node);
+			return super.visit(node);
+		}
+
+		@Override
+		public boolean visit(SingleMemberAnnotation node) {
+			this.annotations.add(node);
+			return super.visit(node);
+		}
+
+		public List<Annotation> getAnnotations() {
+			return this.annotations;
+		}
+
 	}
 
 	private static class BindingFinder extends ASTVisitor {

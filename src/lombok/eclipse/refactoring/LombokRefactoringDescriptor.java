@@ -83,6 +83,8 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 		public static final String ATTRIBUTE_PROJECT = "project"; //$NON-NLS-1$
 		public static final String ATTRIBUTE_REFACTOR_GETTERS = "getters"; //$NON-NLS-1$
 		public static final String ATTRIBUTE_REFACTOR_SETTERS = "setters"; //$NON-NLS-1$
+		public static final String ATTRIBUTE_REFACTOR_EQUALS_HASHCODE = "equalsHashCode"; //$NON-NLS-1$
+		public static final String ATTRIBUTE_REFACTOR_TOSTRING = "toString"; //$NON-NLS-1$
 		public static final String ATTRIBUTE_ELEMENTS = "elements"; //$NON-NLS-1$
 
 		protected void setProject(IJavaProject project) {
@@ -95,6 +97,14 @@ public class LombokRefactoringDescriptor extends RefactoringDescriptor {
 
 		protected void setRefactorSetters(boolean refactorSetters) {
 			put(ATTRIBUTE_REFACTOR_SETTERS, String.valueOf(refactorSetters));
+		}
+
+		protected void setRefactorEqualsAndHashCode(boolean refactor) {
+			put(ATTRIBUTE_REFACTOR_EQUALS_HASHCODE, String.valueOf(refactor));
+		}
+
+		protected void setRefactorToString(boolean refactor) {
+			put(ATTRIBUTE_REFACTOR_TOSTRING, String.valueOf(refactor));
 		}
 
 		protected void setElements(Collection<RefactoringElement> elements) {

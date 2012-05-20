@@ -39,6 +39,8 @@ public class LombokRefactoringWizardPage extends UserInputWizardPage {
 	private final LombokRefactoring refactoring;
 	private Button setterButton;
 	private Button getterButton;
+	private Button equalsHashCodeButton;
+	private Button toStringButton;
 
 	public LombokRefactoringWizardPage(String name, LombokRefactoring refactoring) {
 		super(name);
@@ -55,7 +57,8 @@ public class LombokRefactoringWizardPage extends UserInputWizardPage {
 		layout.numColumns = 1;
 		result.setLayout(layout);
 
-		setMessage(MessageFormat.format(Messages.LombokRefactoringWizardPage_message, this.refactoring.getNumberOfElements()));
+		setMessage(MessageFormat.format(Messages.LombokRefactoringWizardPage_message,
+				this.refactoring.getNumberOfElements()));
 
 		this.getterButton = new Button(result, SWT.CHECK);
 		this.getterButton.setText(Messages.LombokRefactoringWizardPage_getter_check);
@@ -63,8 +66,15 @@ public class LombokRefactoringWizardPage extends UserInputWizardPage {
 		this.setterButton = new Button(result, SWT.CHECK);
 		this.setterButton.setText(Messages.LombokRefactoringWizardPage_setter_check);
 
+		// FIXME
+		this.equalsHashCodeButton = new Button(result, SWT.CHECK);
+		this.equalsHashCodeButton.setText(Messages.LombokRefactoringWizardPage_equals_hashcode_check);
+
+		this.toStringButton = new Button(result, SWT.CHECK);
+		this.toStringButton.setText(Messages.LombokRefactoringWizardPage_tostring_check);
+
 		// ######
-		this.getterButton.addSelectionListener(new SelectionListener() {
+		final SelectionListener inputChangeListener = new SelectionListener() {
 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -75,24 +85,18 @@ public class LombokRefactoringWizardPage extends UserInputWizardPage {
 			public void widgetDefaultSelected(SelectionEvent e) {
 				widgetSelected(e);
 			}
-		});
-		this.setterButton.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				handleInputChanged();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				widgetSelected(e);
-			}
-		});
+		};
+		this.getterButton.addSelectionListener(inputChangeListener);
+		this.setterButton.addSelectionListener(inputChangeListener);
+		this.equalsHashCodeButton.addSelectionListener(inputChangeListener);
+		this.toStringButton.addSelectionListener(inputChangeListener);
 
 		// ######
 
 		this.getterButton.setSelection(true);
 		this.setterButton.setSelection(true);
+		this.equalsHashCodeButton.setSelection(true);
+		this.toStringButton.setSelection(true);
 
 		// ######
 
@@ -102,6 +106,8 @@ public class LombokRefactoringWizardPage extends UserInputWizardPage {
 	void handleInputChanged() {
 		this.refactoring.refactorGetters(this.getterButton.getSelection());
 		this.refactoring.refactorSetters(this.setterButton.getSelection());
+		this.refactoring.refactorEqualsHashCode(this.equalsHashCodeButton.getSelection());
+		this.refactoring.refactorToString(this.toStringButton.getSelection());
 		setPageComplete(this.refactoring.canApply());
 	}
 

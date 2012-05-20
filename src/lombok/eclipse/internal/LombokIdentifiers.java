@@ -30,6 +30,8 @@ public final class LombokIdentifiers {
 	public static final String LOMBOK_ACCESS_LEVEL = "lombok.AccessLevel"; //$NON-NLS-1$
 	public static final String LOMBOK_GETTER = "lombok.Getter"; //$NON-NLS-1$
 	public static final String LOMBOK_SETTER = "lombok.Setter"; //$NON-NLS-1$
+	public static final String LOMBOK_EQUALS_HASHCODE = "lombok.EqualsAndHashCode"; //$NON-NLS-1$
+	public static final String LOMBOK_TOSTRING = "lombok.ToString"; //$NON-NLS-1$
 
 	private LombokIdentifiers() {
 		throw new AssertionError();

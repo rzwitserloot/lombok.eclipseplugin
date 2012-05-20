@@ -7,14 +7,18 @@ public class Messages extends NLS {
 	public static String LombokRefactorAction_unsupported_element;
 	public static String LombokRefactorAction_wizard_title;
 	public static String LombokRefactoringWizard_title;
+	public static String LombokRefactoringWizardPage_equals_hashcode_check;
 	public static String LombokRefactoringWizardPage_getter_check;
 	public static String LombokRefactoringWizardPage_message;
 	public static String LombokRefactoringWizardPage_setter_check;
+	public static String LombokRefactoringWizardPage_tostring_check;
 	public static String LombokRefactoring_change_comment_element;
 	public static String LombokRefactoring_change_comment_elements_title;
+	public static String LombokRefactoring_change_comment_equals_hashcode;
 	public static String LombokRefactoring_change_comment_getter;
 	public static String LombokRefactoring_change_comment_project;
 	public static String LombokRefactoring_change_comment_setter;
+	public static String LombokRefactoring_change_comment_tostring;
 	public static String LombokRefactoring_change_description;
 	public static String LombokRefactoring_create_change_monitor_begin;
 	public static String LombokRefactoring_final_condition_monitor_begin;
